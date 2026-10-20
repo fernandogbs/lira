@@ -1,0 +1,6 @@
+[package]
+name = "lira-audio"
+version = "0.1.0"
+description = "Lira audio capture/playback (stub for M0)"
+license.workspace = true
+edition.workspace = true

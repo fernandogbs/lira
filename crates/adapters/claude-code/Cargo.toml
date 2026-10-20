@@ -1,0 +1,9 @@
+[package]
+name = "lira-adapter-claude-code"
+version = "0.1.0"
+description = "Claude Code agent adapter (M2)"
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+lira-adapter-api = { path = "../api" }

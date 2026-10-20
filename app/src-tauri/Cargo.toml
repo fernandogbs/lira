@@ -1,0 +1,22 @@
+[package]
+name = "lira-app"
+version = "0.1.0"
+description = "Lira Tauri shell"
+license.workspace = true
+edition.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+lira-compositor = { path = "../../crates/compositor" }
+lira-core = { path = "../../crates/core" }
+log = "0.4"
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tauri = { version = "2", features = ["tray-icon"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+
+[lib]
+name = "lira_app_lib"
+crate-type = ["lib", "cdylib", "staticlib"]

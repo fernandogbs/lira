@@ -1,0 +1,16 @@
+[package]
+name = "lira-adapter-api"
+version = "0.1.0"
+description = "Agent adapter trait and test doubles"
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+futures-core = "0.3"
+serde.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+tokio-stream = "0.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }
