@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use lira_core::ipc::{client_request, socket_path, Command};
-use lira_core::Locale;
+use lira_core::settings::Settings;
 
 #[derive(Parser)]
 #[command(name = "lira", about = "Lira voice assistant control")]
@@ -19,7 +19,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() {
-    let locale = Locale::detect();
+    let locale = Settings::load().unwrap_or_default().ui.locale.resolve();
     let cli = Cli::parse();
     let cmd = match cli.command {
         Commands::Toggle => Command::Toggle,

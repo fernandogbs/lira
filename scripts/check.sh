@@ -10,6 +10,9 @@ pnpm --dir app/ui install --frozen-lockfile
 echo "== UI build =="
 pnpm --dir app/ui build
 
+echo "== UI i18n keys =="
+pnpm --dir app/ui test:i18n
+
 echo "== cargo fmt =="
 cargo fmt --all --check
 

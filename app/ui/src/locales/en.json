@@ -1,5 +1,11 @@
 {
   "title": "Lira",
   "state": "State",
-  "hotkeyMode": "Hotkey mode"
+  "hotkeyMode": "Hotkey mode",
+  "screenContext": "Screen context",
+  "screenContextOff": "off",
+  "screenContextText": "text",
+  "screenContextImage": "image",
+  "screenContextTextHint": "Text mode: local OCR when implemented (recommended).",
+  "screenContextImageWarning": "Image mode: sends screenshots to the model — higher token cost."
 }

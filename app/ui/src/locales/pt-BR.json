@@ -1,5 +1,11 @@
 {
   "title": "Lira",
   "state": "Estado",
-  "hotkeyMode": "Modo do atalho"
+  "hotkeyMode": "Modo do atalho",
+  "screenContext": "Contexto de tela",
+  "screenContextOff": "desligado",
+  "screenContextText": "texto",
+  "screenContextImage": "imagem",
+  "screenContextTextHint": "Modo texto: OCR local quando implementado (recomendado).",
+  "screenContextImageWarning": "Modo imagem: envia capturas ao modelo — maior custo em tokens."
 }

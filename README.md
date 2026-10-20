@@ -4,6 +4,8 @@ Open-source (MIT OR Apache-2.0) tray/popup app to talk by voice to coding agents
 
 **M0** is a scaffold: Tauri shell, Unix-socket CLI, minimal Svelte popup, and crate boundaries for audio, STT, adapters, compositor detection, and plugins. Voice capture and Claude Code integration come in later milestones.
 
+See also [README.pt-BR.md](README.pt-BR.md).
+
 ## Run (development)
 
 ```bash
@@ -34,14 +36,21 @@ Mod+Space repeat=false { spawn "lira" "toggle"; }
 
 See `packaging/niri/lira.kdl` for the recommended window rule (`app-id` `lira`, floating top-right, block screen capture).
 
-Optional tray: set `LIRA_NO_TRAY=1` to disable. Tray failures are logged and never exit the app.
+Optional tray: on Linux the app creates a tray icon only when `org.kde.StatusNotifierWatcher` is on the session bus (e.g. DankMaterialShell / dux-shell). Set `LIRA_NO_TRAY=1` to disable. Tray failures are logged and never exit the app.
 
 ## Configuration
 
-`~/.config/lira/config.toml`:
+`~/.config/lira/config.toml` (sectioned, spec 5.2):
 
 ```toml
-hotkey_mode = "toggle"   # or "hold" (accepted; hold is a stub in M0)
+[hotkey]
+mode = "toggle"   # or "hold" (accepted; hold is a stub in M0)
+
+[ui]
+locale = "system" # or "pt-BR" | "en" (system = LC_* / LANG detection)
+
+[screen]
+context = "off"   # or "text" | "image" (M0: settings + UI copy only, no capture)
 ```
 
 ## License
