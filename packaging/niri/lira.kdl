@@ -5,7 +5,7 @@ binds {
 }
 
 window-rule {
-    match app-id="^lira$"
+    match app-id="^lira-app$"
     open-floating true
     default-floating-position x=24 y=24 relative-to="top-right"
     block-out-from "screen-capture"

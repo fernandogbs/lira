@@ -12,6 +12,7 @@ tauri-build = { version = "2", features = [] }
 lira-compositor = { path = "../../crates/compositor" }
 lira-core = { path = "../../crates/core" }
 log = "0.4"
+env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tauri = { version = "2", features = ["tray-icon"] }

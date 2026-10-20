@@ -97,6 +97,8 @@ fn apply_command(app: &AppHandle, runtime: &Arc<AppRuntime>, command: Command) -
         Command::Status => {}
     }
     let current = *state;
+    // Release the lock before emitting: popup_payload locks state again.
+    drop(state);
     emit_popup_status(app, runtime);
     Response::ok(current)
 }
@@ -191,6 +193,7 @@ fn setup_tray(app: &AppHandle, locale: Locale) -> Result<(), Box<dyn std::error:
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let settings = Settings::load().unwrap_or_default();
     if settings.hotkey_mode() == HotkeyMode::Hold {
         log::warn!("hotkey mode=hold is accepted but not implemented in M0 (stub)");

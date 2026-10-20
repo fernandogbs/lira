@@ -118,7 +118,10 @@ impl IpcServer {
 
     pub async fn run(self, handler: CommandHandler) -> Result<(), IpcError> {
         loop {
-            self.accept_one(&handler).await?;
+            // A bad client must not take the server down: log and keep accepting.
+            if let Err(err) = self.accept_one(&handler).await {
+                eprintln!("lira ipc: request failed: {err}");
+            }
         }
     }
 }

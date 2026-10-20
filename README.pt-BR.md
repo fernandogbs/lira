@@ -34,7 +34,7 @@ No Niri, vincule o toggle sem repeat (sem key-release global):
 Mod+Space repeat=false { spawn "lira" "toggle"; }
 ```
 
-Veja `packaging/niri/lira.kdl` para a regra de janela recomendada (`app-id` `lira`, flutuante no canto superior direito, `block-out-from "screen-capture"`).
+Veja `packaging/niri/lira.kdl` para a regra de janela recomendada (`app-id` `lira-app`, flutuante no canto superior direito, `block-out-from "screen-capture"`).
 
 Bandeja opcional: no Linux o ícone só é criado quando `org.kde.StatusNotifierWatcher` está no barramento de sessão (ex.: DankMaterialShell / dux-shell). Use `LIRA_NO_TRAY=1` para desativar. Falhas na bandeja são registradas em log e nunca encerram o app.
 

@@ -34,7 +34,7 @@ On Niri, bind toggle without repeat (no global key-release):
 Mod+Space repeat=false { spawn "lira" "toggle"; }
 ```
 
-See `packaging/niri/lira.kdl` for the recommended window rule (`app-id` `lira`, floating top-right, block screen capture).
+See `packaging/niri/lira.kdl` for the recommended window rule (`app-id` `lira-app`, floating top-right, block screen capture).
 
 Optional tray: on Linux the app creates a tray icon only when `org.kde.StatusNotifierWatcher` is on the session bus (e.g. DankMaterialShell / dux-shell). Set `LIRA_NO_TRAY=1` to disable. Tray failures are logged and never exit the app.
 
