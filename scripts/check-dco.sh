@@ -7,6 +7,7 @@ cd "$ROOT"
 BASE="${DCO_BASE:-main}"
 if ! git rev-parse --verify "${BASE}" >/dev/null 2>&1; then
   echo "DCO: base ref '${BASE}' not found; skipping range check"
+  [ -n "${CI:-}" ] && exit 1
   exit 0
 fi
 
@@ -24,6 +25,6 @@ while IFS= read -r sha; do
     echo "DCO: missing Signed-off-by for commit $sha (expected: $pattern)"
     exit 1
   fi
-done < <(git rev-list "${RANGE}")
+done < <(git rev-list --no-merges "${RANGE}")
 
 echo "DCO: OK (${RANGE})"
