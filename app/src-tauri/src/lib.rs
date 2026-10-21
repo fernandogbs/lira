@@ -5,8 +5,9 @@ mod voice;
 use std::sync::{Arc, Mutex};
 
 use lira_core::ipc::{Command, CommandHandler, IpcServer, Response};
-use lira_core::settings::{HotkeyMode, ScreenContext, Settings};
+use lira_core::settings::{HoldBackend, HotkeyMode, ScreenContext, Settings};
 use lira_core::{AppState, Locale};
+use lira_hotkey::{recommend_backend, spawn_portal_hold, HoldBackendHint, HotkeyEvent};
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
@@ -168,17 +169,69 @@ fn setup_tray(app: &AppHandle, locale: Locale) -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+fn hold_backend_hint(backend: HoldBackend) -> HoldBackendHint {
+    match backend {
+        HoldBackend::Compositor => HoldBackendHint::Compositor,
+        HoldBackend::Portal => HoldBackendHint::Portal,
+        HoldBackend::Evdev => HoldBackendHint::Evdev,
+    }
+}
+
+fn spawn_hold_backend(
+    app: AppHandle,
+    runtime: Arc<AppRuntime>,
+    session: lira_compositor::SessionKind,
+) {
+    let settings = runtime.settings.lock().expect("settings").clone();
+    if settings.hotkey_mode() != HotkeyMode::Hold {
+        return;
+    }
+
+    let configured = hold_backend_hint(settings.hotkey.hold_backend);
+    let effective = recommend_backend(configured, session == lira_compositor::SessionKind::Niri);
+
+    match effective {
+        HoldBackendHint::Compositor => {
+            log::info!(
+                "hold backend=compositor: bind press→`lira start` and release→`lira stop` (see packaging/)"
+            );
+        }
+        HoldBackendHint::Evdev => {
+            if settings.hotkey.evdev_acknowledged {
+                log::info!(
+                    "hold backend=evdev: run `lira-hold` separately (key={})",
+                    settings.hotkey.hold_key
+                );
+                log::warn!("{}", runtime.locale.catalog().evdev_warning);
+            } else {
+                log::warn!("{}", runtime.locale.catalog().evdev_not_acknowledged);
+            }
+        }
+        HoldBackendHint::Portal => {
+            log::info!("hold backend=portal: requesting GlobalShortcuts");
+            tauri::async_runtime::spawn(async move {
+                let mut rx = spawn_portal_hold(Some("<Super>space"));
+                while let Some(event) = rx.recv().await {
+                    let voice = app.state::<VoiceHandle>();
+                    match event {
+                        HotkeyEvent::Pressed => voice::handle_start(&app, &runtime, &voice),
+                        HotkeyEvent::Released => voice::handle_stop(&app, &runtime, &voice),
+                    }
+                    emit_popup_status(&app, &runtime);
+                }
+            });
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let settings = Settings::load().unwrap_or_default();
-    if settings.hotkey_mode() == HotkeyMode::Hold {
-        log::warn!(
-            "hotkey mode=hold: use compositor start/stop binds (portal and lira-hold come later)"
-        );
-    }
-
     let locale = settings.ui.locale.resolve();
+    if settings.hotkey.hold_backend == HoldBackend::Evdev && !settings.hotkey.evdev_acknowledged {
+        log::warn!("{}", locale.catalog().evdev_not_acknowledged);
+    }
 
     let runtime = Arc::new(AppRuntime {
         state: Mutex::new(AppState::Idle),
@@ -220,6 +273,8 @@ pub fn run() {
                     Err(err) => log::error!("failed to bind IPC socket: {err}"),
                 }
             });
+
+            spawn_hold_backend(app.handle().clone(), Arc::clone(&runtime), session);
 
             Ok(())
         })

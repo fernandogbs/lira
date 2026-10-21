@@ -15,6 +15,16 @@ pub enum HotkeyMode {
     Hold,
 }
 
+/// How hold mode obtains press/release. `Evdev` is never selected automatically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum HoldBackend {
+    #[default]
+    Compositor,
+    Portal,
+    Evdev,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum UiLocale {
@@ -84,6 +94,18 @@ pub struct HotkeySection {
     pub mode: HotkeyMode,
     #[serde(default = "default_vad_autostop_ms")]
     pub vad_autostop_ms: u32,
+    #[serde(default)]
+    pub hold_backend: HoldBackend,
+    /// Linux key name for `lira-hold` (evdev), e.g. `"KEY_SPACE"`.
+    #[serde(default = "default_hold_key")]
+    pub hold_key: String,
+    /// Required before `hold_backend = "evdev"` is honored (security acknowledgement).
+    #[serde(default)]
+    pub evdev_acknowledged: bool,
+}
+
+fn default_hold_key() -> String {
+    "KEY_SPACE".to_string()
 }
 
 impl Default for HotkeySection {
@@ -91,6 +113,9 @@ impl Default for HotkeySection {
         Self {
             mode: HotkeyMode::default(),
             vad_autostop_ms: default_vad_autostop_ms(),
+            hold_backend: HoldBackend::default(),
+            hold_key: default_hold_key(),
+            evdev_acknowledged: false,
         }
     }
 }
@@ -341,6 +366,8 @@ enabled = true
         let parsed: Settings = toml::from_str(&text).unwrap();
         assert_eq!(parsed.hotkey.mode, HotkeyMode::Toggle);
         assert_eq!(parsed.hotkey.vad_autostop_ms, 1500);
+        assert_eq!(parsed.hotkey.hold_backend, HoldBackend::Compositor);
+        assert!(!parsed.hotkey.evdev_acknowledged);
         assert_eq!(parsed.ui.locale, UiLocale::System);
         assert_eq!(parsed.screen.context, ScreenContext::Off);
         assert_eq!(parsed.stt.engine, "whisper");

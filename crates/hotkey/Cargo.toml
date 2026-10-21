@@ -1,0 +1,15 @@
+[package]
+name = "lira-hotkey"
+version = "0.1.0"
+description = "Global hotkey backends (portal GlobalShortcuts)"
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+ashpd = { version = "0.11", default-features = false, features = ["tokio", "tracing"] }
+futures-util = "0.3"
+log = { workspace = true }
+tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

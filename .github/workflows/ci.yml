@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -106,3 +109,73 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace --locked
+
+  idle:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev \
+            libasound2-dev \
+            libgtk-layer-shell-dev \
+            cmake \
+            clang \
+            libclang-dev \
+            build-essential \
+            pkg-config \
+            xvfb
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/ui/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+          cache-dependency-path: app/ui/pnpm-lock.yaml
+
+      - name: Build release app
+        run: |
+          pnpm --dir app/ui install --frozen-lockfile
+          pnpm --dir app/ui build
+          cargo build --release -p lira-app --features lira-app/custom-protocol
+
+      - name: Measure idle (short)
+        env:
+          DURATION: "20"
+          IDLE_RSS_BASELINE_MIB: ${{ vars.IDLE_RSS_BASELINE_MIB }}
+        run: |
+          set -euo pipefail
+          xvfb-run -a env LIRA_NO_TRAY=1 ./scripts/measure-idle.sh ./target/release/lira-app | tee idle-log.txt
+          if [[ -n "${IDLE_RSS_BASELINE_MIB:-}" ]]; then
+            avg="$(awk -F'[: ]+' '/^avg RSS:/{print $3; exit}' idle-log.txt)"
+            if [[ -z "${avg}" ]]; then
+              echo "could not parse avg RSS from idle log" >&2
+              exit 1
+            fi
+            python3 -c "
+          import os, sys
+          avg = float('${avg}')
+          baseline = float(os.environ['IDLE_RSS_BASELINE_MIB'])
+          limit = baseline * 1.20
+          print(f'avg_rss_mib={avg} baseline={baseline} limit={limit}')
+          sys.exit(1 if avg > limit else 0)
+          "
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: idle-log
+          path: idle-log.txt

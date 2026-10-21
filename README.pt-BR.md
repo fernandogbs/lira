@@ -38,7 +38,15 @@ Mod+Space repeat=false { spawn "lira" "toggle"; }
 
 Veja `packaging/niri/lira.kdl` para a regra de janela recomendada (`app-id` `lira-app`, flutuante no canto superior direito, `block-out-from "screen-capture"`).
 
-**Modo hold:** defina `[hotkey] mode = "hold"` e vincule pressionar/soltar a `lira start` / `lira stop` onde o compositor suporte (ex.: Hyprland `bind` + `bindr`). No Niri, prefira toggle + VAD. Portal GlobalShortcuts e `lira-hold` (evdev, opt-in) entram no fechamento do M1; não ative evdev sem ler o aviso de segurança na documentação.
+**Modo hold:** defina `[hotkey] mode = "hold"` e escolha `hold_backend`:
+
+| Backend | Quando | Como |
+|---------|--------|------|
+| `compositor` (padrão no Niri) | Hyprland `bind`/`bindr` | Ver `packaging/hyprland/lira.conf` |
+| `portal` | KDE / GNOME / portal Hyprland | O app pede GlobalShortcuts; activate→start, deactivate→stop |
+| `evdev` | Opt-in no Niri | Rode `lira-hold` com `evdev_acknowledged = true`. Exige grupo `input`. **Nunca automático.** |
+
+No Niri, prefira toggle + VAD. Leia o aviso de segurança do `lira-hold` antes de ativar evdev.
 
 Bandeja opcional: no Linux o ícone só é criado quando `org.kde.StatusNotifierWatcher` está no barramento de sessão (ex.: DankMaterialShell / dux-shell). Use `LIRA_NO_TRAY=1` para desativar. Falhas na bandeja são registradas em log e nunca encerram o app.
 
@@ -48,8 +56,11 @@ Bandeja opcional: no Linux o ícone só é criado quando `org.kde.StatusNotifier
 
 ```toml
 [hotkey]
-mode = "toggle"           # ou "hold" (use binds start/stop; VAD desligado no hold)
+mode = "toggle"           # ou "hold" (VAD desligado no hold)
 vad_autostop_ms = 1500    # só no toggle; 0 desliga
+hold_backend = "compositor"  # ou "portal" | "evdev"
+# hold_key = "KEY_SPACE"   # para lira-hold
+# evdev_acknowledged = false
 
 [ui]
 locale = "system"         # ou "pt-BR" | "en"

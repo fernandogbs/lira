@@ -5,6 +5,7 @@ members = [
     "crates/core",
     "crates/audio",
     "crates/stt",
+    "crates/hotkey",
     "crates/adapters/api",
     "crates/adapters/claude-code",
     "crates/compositor",
