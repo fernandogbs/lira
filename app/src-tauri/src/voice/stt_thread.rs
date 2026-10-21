@@ -80,6 +80,7 @@ fn run(cmd_rx: mpsc::Receiver<SttCommand>, event_tx: mpsc::Sender<SttEvent>) {
                     let _ = event_tx.send(SttEvent::Error(err));
                     continue;
                 }
+                let load_ms = started.elapsed().as_millis() as i64;
 
                 let engine = &slot.as_ref().expect("engine loaded").engine;
                 let model_label = model_label(job.settings.stt.model);
@@ -92,6 +93,11 @@ fn run(cmd_rx: mpsc::Receiver<SttCommand>, event_tx: mpsc::Sender<SttEvent>) {
                     Ok(text) => {
                         last_used = Some(Instant::now());
                         let latency_ms = started.elapsed().as_millis() as i64;
+                        log::info!(
+                            "stt: transcribed audio_ms={audio_ms} latency_ms={latency_ms} (model_load_ms={load_ms} transcribe_ms={}) model={model_label} lang={language} chars={}",
+                            latency_ms - load_ms,
+                            text.chars().count()
+                        );
                         let _ = event_tx.send(SttEvent::Done {
                             text,
                             latency_ms,
