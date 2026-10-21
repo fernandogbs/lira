@@ -8,7 +8,7 @@ use std::time::Instant;
 use clap::{Parser, ValueEnum};
 use hound::{SampleFormat, WavReader};
 use lira_audio::resample_to_16k_mono;
-use lira_stt::{ensure_model, WhisperEngine};
+use lira_stt::{ensure_model, stt_n_threads, WhisperEngine};
 use serde::Serialize;
 
 const SAMPLE_RATE: u32 = 16_000;
@@ -49,6 +49,10 @@ struct Args {
     label: Option<String>,
     #[arg(long, default_value_t = 1)]
     warmup: u32,
+    #[arg(long)]
+    limit: Option<usize>,
+    #[arg(long)]
+    threads: Option<usize>,
 }
 
 #[derive(Serialize)]
@@ -57,6 +61,7 @@ struct BenchResult {
     model: String,
     lang: String,
     gpu: bool,
+    threads: usize,
     files: u64,
     audio_secs: f64,
     total_secs: f64,
@@ -144,11 +149,19 @@ fn read_manifest(path: &Path) -> Result<Vec<(PathBuf, String)>, String> {
 
 fn main() -> Result<(), String> {
     let args = Args::parse();
+    if let Some(n) = args.threads {
+        // SAFETY: single-threaded CLI; no other threads read this env var yet.
+        unsafe { std::env::set_var("LIRA_STT_THREADS", n.to_string()) };
+    }
     let spec = model_spec(args.model);
     ensure_model(spec).map_err(|e| e.to_string())?;
     let engine = WhisperEngine::load_model(spec, args.gpu).map_err(|e| e.to_string())?;
+    let threads = stt_n_threads();
 
-    let rows = read_manifest(&args.manifest)?;
+    let mut rows = read_manifest(&args.manifest)?;
+    if let Some(limit) = args.limit {
+        rows.truncate(limit);
+    }
     if rows.is_empty() {
         return Err("manifest is empty".into());
     }
@@ -207,6 +220,7 @@ fn main() -> Result<(), String> {
             BenchLang::En => "en".into(),
         },
         gpu: args.gpu,
+        threads,
         files: rows.len() as u64,
         audio_secs,
         total_secs: total_wall,

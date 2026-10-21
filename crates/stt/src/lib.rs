@@ -11,4 +11,4 @@ pub use models::{
     LARGE_V3_TURBO_Q5_0, SMALL_Q5_1, VAD_SILERO,
 };
 pub use vad_engine::VadEngine;
-pub use whisper::{load_with_fallback, WhisperEngine, WhisperError};
+pub use whisper::{load_with_fallback, stt_n_threads, WhisperEngine, WhisperError};

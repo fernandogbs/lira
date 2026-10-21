@@ -1,10 +1,10 @@
-use std::num::NonZeroUsize;
-use std::sync::Arc;
-use std::thread::available_parallelism;
+use std::sync::Mutex;
 
 use lira_core::settings::SttModel;
 use thiserror::Error;
-use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
+use whisper_rs::{
+    FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperState,
+};
 
 use crate::models::{ensure_model, ModelId, ModelSpec};
 
@@ -18,17 +18,40 @@ pub enum WhisperError {
     LoadFailed(String),
 }
 
+/// Thread count for whisper.cpp (physical cores by default, max 8).
+pub fn stt_n_threads() -> usize {
+    if let Ok(s) = std::env::var("LIRA_STT_THREADS") {
+        if let Ok(n) = s.parse::<usize>() {
+            if n >= 1 {
+                return n;
+            }
+        }
+    }
+    num_cpus::get_physical().clamp(1, 8)
+}
+
+fn stt_env_flag(name: &str) -> bool {
+    std::env::var(name).is_ok_and(|v| v == "1")
+}
+
 pub struct WhisperEngine {
-    ctx: Arc<WhisperContext>,
+    ctx: WhisperContext,
+    state: Mutex<WhisperState>,
 }
 
 impl WhisperEngine {
     pub fn load(path: &str, use_gpu: bool) -> Result<Self, WhisperError> {
+        eprintln!("lira-stt: {}", whisper_rs::print_system_info());
         let mut params = WhisperContextParameters::default();
         params.use_gpu(use_gpu);
+        params.flash_attn(!std::env::var("LIRA_STT_FLASH_ATTN").is_ok_and(|v| v == "0"));
         let ctx = WhisperContext::new_with_params(path, params)
             .map_err(|_| WhisperError::LoadFailed(path.to_string()))?;
-        Ok(Self { ctx: Arc::new(ctx) })
+        let state = ctx.create_state()?;
+        Ok(Self {
+            ctx,
+            state: Mutex::new(state),
+        })
     }
 
     pub fn load_model(spec: &ModelSpec, use_gpu: bool) -> Result<Self, WhisperError> {
@@ -42,13 +65,9 @@ impl WhisperEngine {
         language: &str,
         initial_prompt: Option<&str>,
     ) -> Result<String, WhisperError> {
-        let mut state = self.ctx.create_state()?;
+        let mut state = self.state.lock().expect("whisper state mutex poisoned");
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        let threads = available_parallelism()
-            .unwrap_or(NonZeroUsize::new(4).unwrap())
-            .get()
-            .min(8) as i32;
-        params.set_n_threads(threads);
+        params.set_n_threads(stt_n_threads() as i32);
         params.set_translate(false);
         params.set_language(Some(language));
         params.set_no_timestamps(true);
@@ -57,13 +76,26 @@ impl WhisperEngine {
         params.set_print_progress(false);
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
+        params.set_no_context(true);
+        params.set_single_segment(false);
+        if stt_env_flag("LIRA_STT_NO_FALLBACK") {
+            params.set_temperature_inc(0.0);
+        }
         if let Some(prompt) = initial_prompt {
             if !prompt.is_empty() {
                 params.set_initial_prompt(prompt);
             }
         }
 
+        let log_timings = stt_env_flag("LIRA_STT_TIMINGS");
+        if log_timings {
+            self.ctx.reset_timings();
+        }
         state.full(params, pcm_16k_mono_f32)?;
+        if log_timings {
+            eprintln!("lira-stt: whisper.cpp timings:");
+            self.ctx.print_timings();
+        }
         let n = state.full_n_segments();
         let mut parts = Vec::new();
         for i in 0..n {

@@ -8,6 +8,7 @@ edition.workspace = true
 [features]
 default = []
 cuda = ["whisper-rs/cuda"]
+openmp = ["whisper-rs/openmp"]
 vulkan = ["whisper-rs/vulkan"]
 
 [dependencies]
@@ -15,6 +16,7 @@ dirs.workspace = true
 hex = "0.4"
 lira-core = { path = "../core" }
 log.workspace = true
+num_cpus = "1.16"
 sha2.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
