@@ -1,0 +1,15 @@
+[package]
+name = "lira-stt"
+version = "0.1.0"
+description = "Speech-to-text trait definitions (stub for M0)"
+license.workspace = true
+edition.workspace = true
+
+[features]
+default = ["cpu"]
+cpu = []
+cuda = []
+vulkan = []
+
+[dependencies]
+async-trait.workspace = true

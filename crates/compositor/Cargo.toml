@@ -1,0 +1,6 @@
+[package]
+name = "lira-compositor"
+version = "0.1.0"
+description = "Compositor/session detection for Lira"
+license.workspace = true
+edition.workspace = true

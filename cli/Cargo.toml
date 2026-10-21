@@ -1,0 +1,20 @@
+[package]
+name = "lira-cli"
+version = "0.1.0"
+description = "Lira CLI (toggle/start/stop/status)"
+license.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "lira"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+lira-core = { path = "../crates/core" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
+
+[dev-dependencies]
+lira-core = { path = "../crates/core" }
+tempfile = "3"
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

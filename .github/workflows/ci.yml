@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libssl-dev \
+            libxdo-dev \
+            build-essential \
+            pkg-config
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/ui/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+          cache-dependency-path: app/ui/pnpm-lock.yaml
+
+      - name: Run checks (no DCO)
+        env:
+          SKIP_DCO: "1"
+        run: ./scripts/check.sh
+
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Check the PR head, not GitHub's synthetic merge commit.
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: DCO sign-off
+        env:
+          DCO_BASE: origin/${{ github.base_ref }}
+        run: ./scripts/check-dco.sh
+
+  arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm \
+            base-devel \
+            rust \
+            pnpm \
+            nodejs \
+            git \
+            webkit2gtk-4.1 \
+            libayatana-appindicator \
+            librsvg \
+            openssl \
+            xdotool \
+            pkgconf
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build UI
+        run: |
+          pnpm --dir app/ui install --frozen-lockfile
+          pnpm --dir app/ui build
+
+      - name: cargo build
+        run: cargo build --workspace --locked
+
+      - name: cargo test
+        run: cargo test --workspace --locked

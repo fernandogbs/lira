@@ -1,0 +1,12 @@
+// Snippets for ~/.config/niri/config.kdl
+
+binds {
+    Mod+Space repeat=false { spawn "lira" "toggle"; }
+}
+
+window-rule {
+    match app-id="^lira-app$"
+    open-floating true
+    default-floating-position x=24 y=24 relative-to="top-right"
+    block-out-from "screen-capture"
+}
