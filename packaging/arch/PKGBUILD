@@ -16,6 +16,8 @@ depends=(
   'gtk3'
   'libayatana-appindicator'
   'dbus'
+  'alsa-lib'
+  'gtk-layer-shell'
 )
 makedepends=(
   'rust'
@@ -23,6 +25,11 @@ makedepends=(
   'pnpm'
   'nodejs'
   'git'
+  'cmake'
+  'clang'
+)
+optdepends=(
+  'wl-clipboard: Wayland clipboard integration'
 )
 source=("lira::git+https://github.com/fernandogbs/lira.git")
 sha256sums=('SKIP')

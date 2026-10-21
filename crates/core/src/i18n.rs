@@ -57,6 +57,7 @@ impl Locale {
         match state {
             AppState::Idle => self.catalog().state_idle.to_string(),
             AppState::Listening => self.catalog().state_listening.to_string(),
+            AppState::Transcribing => self.catalog().state_transcribing.to_string(),
         }
     }
 
@@ -98,6 +99,7 @@ pub struct Catalog {
     pub not_running: &'static str,
     pub state_idle: &'static str,
     pub state_listening: &'static str,
+    pub state_transcribing: &'static str,
     pub hotkey_toggle: &'static str,
     pub hotkey_hold: &'static str,
     pub tray_toggle: &'static str,
@@ -113,6 +115,7 @@ const CATALOG_PT_BR: Catalog = Catalog {
     not_running: "Lira não está em execução",
     state_idle: "Ocioso",
     state_listening: "Ouvindo…",
+    state_transcribing: "Transcrevendo…",
     hotkey_toggle: "alternar (toggle)",
     hotkey_hold: "segurar (hold, stub)",
     tray_toggle: "Alternar",
@@ -128,6 +131,7 @@ const CATALOG_EN: Catalog = Catalog {
     not_running: "Lira is not running",
     state_idle: "Idle",
     state_listening: "Listening…",
+    state_transcribing: "Transcribing…",
     hotkey_toggle: "toggle",
     hotkey_hold: "hold (stub)",
     tray_toggle: "Toggle",
@@ -151,6 +155,7 @@ mod tests {
             ("not_running", c.not_running),
             ("state_idle", c.state_idle),
             ("state_listening", c.state_listening),
+            ("state_transcribing", c.state_transcribing),
             ("hotkey_toggle", c.hotkey_toggle),
             ("hotkey_hold", c.hotkey_hold),
             ("tray_toggle", c.tray_toggle),

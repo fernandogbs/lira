@@ -37,9 +37,9 @@ pub enum ScreenContext {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum SttModel {
-    #[default]
     #[serde(rename = "large-v3-turbo-q5_0")]
     LargeV3TurboQ5_0,
+    #[default]
     #[serde(rename = "small-q5_1")]
     SmallQ5_1,
 }
@@ -65,6 +65,19 @@ fn default_true() -> bool {
     true
 }
 
+fn default_keep_warm_min() -> u32 {
+    5
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PopupMode {
+    #[default]
+    Auto,
+    LayerShell,
+    Floating,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HotkeySection {
     #[serde(default)]
@@ -86,6 +99,8 @@ impl Default for HotkeySection {
 pub struct UiSection {
     #[serde(default)]
     pub locale: UiLocale,
+    #[serde(default)]
+    pub popup: PopupMode,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -108,6 +123,11 @@ pub struct SttSection {
     pub gpu: bool,
     #[serde(default = "default_fallback_model")]
     pub fallback_model: SttModel,
+    #[serde(default = "default_keep_warm_min")]
+    pub keep_warm_min: u32,
+    /// When true, whisper `audio_ctx` is sized from clip length (see `lira_stt::audio_ctx_for`).
+    #[serde(default)]
+    pub audio_ctx_auto: bool,
 }
 
 fn default_fallback_model() -> SttModel {
@@ -123,6 +143,8 @@ impl Default for SttSection {
             vocabulary: Vec::new(),
             gpu: false,
             fallback_model: default_fallback_model(),
+            keep_warm_min: default_keep_warm_min(),
+            audio_ctx_auto: false,
         }
     }
 }
@@ -322,7 +344,7 @@ enabled = true
         assert_eq!(parsed.ui.locale, UiLocale::System);
         assert_eq!(parsed.screen.context, ScreenContext::Off);
         assert_eq!(parsed.stt.engine, "whisper");
-        assert_eq!(parsed.stt.model, SttModel::LargeV3TurboQ5_0);
+        assert_eq!(parsed.stt.model, SttModel::SmallQ5_1);
         assert_eq!(parsed.stt.language, SttLanguage::Auto);
         assert_eq!(parsed.stt.fallback_model, SttModel::SmallQ5_1);
         assert!(parsed.history.enabled);
@@ -338,7 +360,7 @@ mode = "toggle"
 locale = "en"
 "#;
         let settings: Settings = toml::from_str(text).unwrap();
-        assert_eq!(settings.stt.model, SttModel::LargeV3TurboQ5_0);
+        assert_eq!(settings.stt.model, SttModel::SmallQ5_1);
         assert_eq!(settings.hotkey.vad_autostop_ms, 1500);
         assert!(settings.history.enabled);
     }
@@ -396,5 +418,37 @@ vad_autostop_ms = 9000
         s.stt.vocabulary = vec!["x".repeat(120), "y".repeat(120)];
         let prompt = s.initial_prompt().unwrap();
         assert!(prompt.len() <= INITIAL_PROMPT_MAX_CHARS);
+    }
+
+    #[test]
+    fn stt_audio_ctx_auto_defaults_to_false() {
+        let settings = Settings::default();
+        assert!(!settings.stt.audio_ctx_auto);
+        let text = toml::to_string_pretty(&settings).unwrap();
+        let parsed: Settings = toml::from_str(&text).unwrap();
+        assert!(!parsed.stt.audio_ctx_auto);
+    }
+
+    #[test]
+    fn stt_keep_warm_min_defaults_to_five() {
+        let settings = Settings::default();
+        assert_eq!(settings.stt.keep_warm_min, 5);
+        let text = toml::to_string_pretty(&settings).unwrap();
+        let parsed: Settings = toml::from_str(&text).unwrap();
+        assert_eq!(parsed.stt.keep_warm_min, 5);
+    }
+
+    #[test]
+    fn ui_popup_mode_defaults_and_parses() {
+        let settings = Settings::default();
+        assert_eq!(settings.ui.popup, PopupMode::Auto);
+        let parsed: Settings = toml::from_str(
+            r#"
+[ui]
+popup = "layer_shell"
+"#,
+        )
+        .unwrap();
+        assert_eq!(parsed.ui.popup, PopupMode::LayerShell);
     }
 }

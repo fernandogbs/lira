@@ -7,5 +7,7 @@
   "screenContextText": "texto",
   "screenContextImage": "imagem",
   "screenContextTextHint": "Modo texto: OCR local quando implementado (recomendado).",
-  "screenContextImageWarning": "Modo imagem: envia capturas ao modelo — maior custo em tokens."
+  "screenContextImageWarning": "Modo imagem: envia capturas ao modelo — maior custo em tokens.",
+  "copiedToClipboard": "Copiado para a área de transferência",
+  "latencyLabel": "Latência: {ms} ms"
 }

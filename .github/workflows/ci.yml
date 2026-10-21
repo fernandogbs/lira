@@ -24,6 +24,11 @@ jobs:
             librsvg2-dev \
             libssl-dev \
             libxdo-dev \
+            libasound2-dev \
+            libgtk-layer-shell-dev \
+            cmake \
+            clang \
+            libclang-dev \
             build-essential \
             pkg-config
 
@@ -83,6 +88,10 @@ jobs:
             librsvg \
             openssl \
             xdotool \
+            alsa-lib \
+            gtk-layer-shell \
+            cmake \
+            clang \
             pkgconf
 
       - uses: Swatinem/rust-cache@v2

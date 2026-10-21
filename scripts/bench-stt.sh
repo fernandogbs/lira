@@ -25,16 +25,28 @@ run_bench() {
   local lang="$4"
   local gpu="$5"
   local manifest="$6"
+  local audio_ctx_auto="${7:-0}"
   local gpu_flag=()
   if [[ "$gpu" == "1" ]]; then
     gpu_flag=(--gpu)
+  fi
+  local actx_flag=()
+  if [[ "$audio_ctx_auto" == "1" ]]; then
+    actx_flag=(--audio-ctx-auto)
+  fi
+  local limit_flag=()
+  if [[ -n "${BENCH_LIMIT:-}" ]]; then
+    limit_flag=(--limit "$BENCH_LIMIT")
   fi
   "$bin" \
     --manifest "$manifest" \
     --model "$model" \
     --lang "$lang" \
     --label "$label" \
-    "${gpu_flag[@]}" >>"$RESULTS"
+    --threads "${BENCH_THREADS:-4}" \
+    "${limit_flag[@]}" \
+    "${gpu_flag[@]}" \
+    "${actx_flag[@]}" >>"$RESULTS"
 }
 
 PT_MANIFEST="$DIR/fleurs/pt_br/manifest.tsv"
@@ -42,12 +54,17 @@ EN_MANIFEST="$DIR/fleurs/en_us/manifest.tsv"
 
 run_bench "$BENCH_BIN" "A-small-cpu" small pt 0 "$PT_MANIFEST"
 run_bench "$BENCH_BIN" "A-small-cpu" small en 0 "$EN_MANIFEST"
-run_bench "$BENCH_BIN" "B-turbo-cpu" turbo pt 0 "$PT_MANIFEST"
-run_bench "$BENCH_BIN" "B-turbo-cpu" turbo en 0 "$EN_MANIFEST"
+run_bench "$BENCH_BIN" "A2-small-cpu-actx" small pt 0 "$PT_MANIFEST" 1
+run_bench "$BENCH_BIN" "A2-small-cpu-actx" small en 0 "$EN_MANIFEST" 1
 
-if [[ -n "$VULKAN_BIN" ]]; then
-  run_bench "$VULKAN_BIN" "C-turbo-vulkan" turbo pt 1 "$PT_MANIFEST"
-  run_bench "$VULKAN_BIN" "C-turbo-vulkan" turbo en 1 "$EN_MANIFEST"
+if [[ "${BENCH_TURBO:-0}" == "1" ]]; then
+  run_bench "$BENCH_BIN" "B-turbo-cpu" turbo pt 0 "$PT_MANIFEST"
+  run_bench "$BENCH_BIN" "B-turbo-cpu" turbo en 0 "$EN_MANIFEST"
+
+  if [[ -n "$VULKAN_BIN" ]]; then
+    run_bench "$VULKAN_BIN" "C-turbo-vulkan" turbo pt 1 "$PT_MANIFEST"
+    run_bench "$VULKAN_BIN" "C-turbo-vulkan" turbo en 1 "$EN_MANIFEST"
+  fi
 fi
 
 python3 - "$RESULTS" <<'PY'

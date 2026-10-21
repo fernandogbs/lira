@@ -18,6 +18,21 @@ pub enum WhisperError {
     LoadFailed(String),
 }
 
+const WHISPER_SAMPLE_RATE: f64 = 16_000.0;
+/// Max whisper `audio_ctx` (30 s at 20 ms/frame).
+const AUDIO_CTX_MAX: i32 = 1500;
+
+/// Whisper `audio_ctx` sized from 16 kHz mono sample count (20 ms frames, cap 30 s).
+pub fn audio_ctx_for(samples_len: usize) -> i32 {
+    let secs = samples_len as f64 / WHISPER_SAMPLE_RATE;
+    let frames = secs.mul_add(50.0, 0.0).ceil() as i32 + 64;
+    round_up_to_multiple_of_64(frames).min(AUDIO_CTX_MAX)
+}
+
+fn round_up_to_multiple_of_64(n: i32) -> i32 {
+    ((n + 63) / 64) * 64
+}
+
 /// Thread count for whisper.cpp (physical cores by default, max 8).
 pub fn stt_n_threads() -> usize {
     if let Ok(s) = std::env::var("LIRA_STT_THREADS") {
@@ -64,6 +79,7 @@ impl WhisperEngine {
         pcm_16k_mono_f32: &[f32],
         language: &str,
         initial_prompt: Option<&str>,
+        audio_ctx_auto: bool,
     ) -> Result<String, WhisperError> {
         let mut state = self.state.lock().expect("whisper state mutex poisoned");
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
@@ -85,6 +101,9 @@ impl WhisperEngine {
             if !prompt.is_empty() {
                 params.set_initial_prompt(prompt);
             }
+        }
+        if audio_ctx_auto {
+            params.set_audio_ctx(audio_ctx_for(pcm_16k_mono_f32.len()));
         }
 
         let log_timings = stt_env_flag("LIRA_STT_TIMINGS");
@@ -127,5 +146,30 @@ pub fn load_with_fallback(
             let fallback_spec = ModelId::from(fallback).spec();
             WhisperEngine::load_model(fallback_spec, gpu)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_ctx_for_empty_is_64() {
+        assert_eq!(audio_ctx_for(0), 64);
+    }
+
+    #[test]
+    fn audio_ctx_for_one_second() {
+        assert_eq!(audio_ctx_for(16_000), 128);
+    }
+
+    #[test]
+    fn audio_ctx_for_ten_seconds() {
+        assert_eq!(audio_ctx_for(160_000), 576);
+    }
+
+    #[test]
+    fn audio_ctx_for_long_audio_caps_at_1500_then_rounds() {
+        assert_eq!(audio_ctx_for(16_000 * 60), 1500);
     }
 }

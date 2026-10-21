@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub enum AppState {
     Idle,
     Listening,
+    Transcribing,
 }
 
 impl AppState {
@@ -12,6 +13,7 @@ impl AppState {
         match self {
             Self::Idle => Self::Listening,
             Self::Listening => Self::Idle,
+            Self::Transcribing => Self::Transcribing,
         }
     }
 }

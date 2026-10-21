@@ -53,6 +53,8 @@ struct Args {
     limit: Option<usize>,
     #[arg(long)]
     threads: Option<usize>,
+    #[arg(long, default_value_t = false)]
+    audio_ctx_auto: bool,
 }
 
 #[derive(Serialize)]
@@ -62,6 +64,7 @@ struct BenchResult {
     lang: String,
     gpu: bool,
     threads: usize,
+    audio_ctx_auto: bool,
     files: u64,
     audio_secs: f64,
     total_secs: f64,
@@ -179,7 +182,7 @@ fn main() -> Result<(), String> {
     for _ in 0..args.warmup {
         let (pcm, _) = load_wav_pcm_16k(&rows[0].0)?;
         engine
-            .transcribe(&pcm, lang, None)
+            .transcribe(&pcm, lang, None, args.audio_ctx_auto)
             .map_err(|e| e.to_string())?;
     }
 
@@ -193,7 +196,7 @@ fn main() -> Result<(), String> {
         audio_secs += dur;
         let t0 = Instant::now();
         let hyp = engine
-            .transcribe(&pcm, lang, None)
+            .transcribe(&pcm, lang, None, args.audio_ctx_auto)
             .map_err(|e| e.to_string())?;
         let elapsed = t0.elapsed().as_secs_f64();
         total_wall += elapsed;
@@ -221,6 +224,7 @@ fn main() -> Result<(), String> {
         },
         gpu: args.gpu,
         threads,
+        audio_ctx_auto: args.audio_ctx_auto,
         files: rows.len() as u64,
         audio_secs,
         total_secs: total_wall,
