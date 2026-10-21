@@ -51,9 +51,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: app/ui/pnpm-lock.yaml
 
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL || true
+          df -h
+
       - name: Run checks (no DCO)
         env:
           SKIP_DCO: "1"
+          SKIP_FINAL_BUILD: "1"
         run: ./scripts/check.sh
 
   dco:
@@ -103,9 +110,6 @@ jobs:
         run: |
           pnpm --dir app/ui install --frozen-lockfile
           pnpm --dir app/ui build
-
-      - name: cargo build
-        run: cargo build --workspace --locked
 
       - name: cargo test
         run: cargo test --workspace --locked

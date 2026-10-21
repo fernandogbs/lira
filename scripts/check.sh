@@ -22,8 +22,14 @@ cargo clippy --workspace --all-targets -- -D warnings
 echo "== cargo test =="
 cargo test --workspace
 
-echo "== cargo build =="
-cargo build --workspace
+# Clippy --all-targets + tests already compile the workspace; a second full
+# `cargo build` doubles peak disk on CI runners (ashpd/zbus/whisper).
+if [[ "${SKIP_FINAL_BUILD:-}" != "1" ]]; then
+  echo "== cargo build =="
+  cargo build --workspace
+else
+  echo "== cargo build skipped (SKIP_FINAL_BUILD=1) =="
+fi
 
 if [[ "${SKIP_DCO:-}" != "1" ]]; then
   echo "== DCO =="
