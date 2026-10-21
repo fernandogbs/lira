@@ -173,7 +173,9 @@ pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let settings = Settings::load().unwrap_or_default();
     if settings.hotkey_mode() == HotkeyMode::Hold {
-        log::warn!("hotkey mode=hold is accepted but not implemented in M0 (stub)");
+        log::warn!(
+            "hotkey mode=hold: use compositor start/stop binds (portal and lira-hold come later)"
+        );
     }
 
     let locale = settings.ui.locale.resolve();
