@@ -151,7 +151,9 @@ fn setup_tray(app: &AppHandle, locale: Locale) -> Result<(), Box<dyn std::error:
         return Ok(());
     }
     if !status_notifier_watcher_present() {
-        log::info!("tray: no StatusNotifierWatcher, running without tray");
+        log::warn!(
+            "tray: org.kde.StatusNotifierWatcher not found on session bus; running without tray icon (use `lira toggle` or the compositor keybind). Enable a StatusNotifier host (e.g. DMS tray widget, waybar tray) to get the icon."
+        );
         return Ok(());
     }
     log::info!("tray: StatusNotifierWatcher found, tray enabled");

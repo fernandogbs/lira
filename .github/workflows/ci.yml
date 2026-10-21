@@ -62,3 +62,38 @@ jobs:
         env:
           DCO_BASE: origin/${{ github.base_ref }}
         run: ./scripts/check-dco.sh
+
+  arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm \
+            base-devel \
+            rust \
+            pnpm \
+            nodejs \
+            git \
+            webkit2gtk-4.1 \
+            libayatana-appindicator \
+            librsvg \
+            openssl \
+            xdotool \
+            pkgconf
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build UI
+        run: |
+          pnpm --dir app/ui install --frozen-lockfile
+          pnpm --dir app/ui build
+
+      - name: cargo build
+        run: cargo build --workspace --locked
+
+      - name: cargo test
+        run: cargo test --workspace --locked

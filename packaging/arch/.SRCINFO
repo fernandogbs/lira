@@ -1,0 +1,25 @@
+pkgbase = lira-git
+	pkgdesc = Voice assistant shell (Tauri) with Niri integration
+	pkgver = 0.1.0.r0.g0000000
+	pkgrel = 1
+	url = https://github.com/fernandogbs/lira
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	license = Apache-2.0
+	makedepends = rust
+	makedepends = cargo
+	makedepends = pnpm
+	makedepends = nodejs
+	makedepends = git
+	depends = webkit2gtk-4.1
+	depends = gtk3
+	depends = libayatana-appindicator
+	depends = dbus
+	provides = lira
+	conflicts = lira
+	options = !lto
+	source = lira::git+https://github.com/fernandogbs/lira.git
+	sha256sums = SKIP
+
+pkgname = lira-git

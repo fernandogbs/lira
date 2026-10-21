@@ -18,6 +18,9 @@ serde_json.workspace = true
 tauri = { version = "2", features = ["tray-icon"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
 
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
 [lib]
 name = "lira_app_lib"
 crate-type = ["lib", "cdylib", "staticlib"]

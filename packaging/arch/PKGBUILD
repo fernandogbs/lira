@@ -1,0 +1,54 @@
+# Maintainer: Fernando <https://github.com/fernandogbs>
+# Repo is private until M1; makepkg needs SSH access (users can swap to
+# source=("lira::git+ssh://git@github.com/fernandogbs/lira.git")).
+pkgname=lira-git
+pkgver=0.1.0.r0.g0000000
+pkgrel=1
+pkgdesc="Voice assistant shell (Tauri) with Niri integration"
+arch=('x86_64' 'aarch64')
+url="https://github.com/fernandogbs/lira"
+license=('MIT' 'Apache-2.0')
+options=('!lto')
+provides=(lira)
+conflicts=(lira)
+depends=(
+  'webkit2gtk-4.1'
+  'gtk3'
+  'libayatana-appindicator'
+  'dbus'
+)
+makedepends=(
+  'rust'
+  'cargo'
+  'pnpm'
+  'nodejs'
+  'git'
+)
+source=("lira::git+https://github.com/fernandogbs/lira.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/lira"
+  ( set -o pipefail; git describe --long --tags --abbrev=7 2>/dev/null | sed "s/^v//;s/\([^-]*-g\)/r\1/;s/-/./g" ) || printf "0.1.0.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+prepare() {
+  cd "$srcdir/lira"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$srcdir/lira"
+  pnpm --dir app/ui install --frozen-lockfile
+  pnpm --dir app/ui build
+  cargo build --release --locked -p lira-app -p lira-cli --features lira-app/custom-protocol
+}
+
+package() {
+  cd "$srcdir/lira"
+  install -Dm755 target/release/lira-app "$pkgdir/usr/bin/lira-app"
+  install -Dm755 target/release/lira "$pkgdir/usr/bin/lira"
+  install -Dm644 LICENSE-MIT "$pkgdir/usr/share/licenses/$pkgname/LICENSE-MIT"
+  install -Dm644 LICENSE-APACHE "$pkgdir/usr/share/licenses/$pkgname/LICENSE-APACHE"
+  install -Dm644 packaging/niri/lira.kdl "$pkgdir/usr/share/lira/niri/lira.kdl"
+}
