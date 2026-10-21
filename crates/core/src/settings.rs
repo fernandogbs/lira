@@ -130,10 +130,36 @@ pub struct UiSection {
     pub popup: PopupMode,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ScreenScope {
+    #[default]
+    Window,
+    Screen,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ScreenPreview {
+    Always,
+    #[default]
+    First,
+    Never,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ScreenSection {
     #[serde(default)]
     pub context: ScreenContext,
+    #[serde(default)]
+    pub scope: ScreenScope,
+    #[serde(default)]
+    pub exclude_apps: Vec<String>,
+    #[serde(default)]
+    pub preview: ScreenPreview,
+    /// Internal: set after the user has seen the first preview.
+    #[serde(default)]
+    pub preview_seen: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

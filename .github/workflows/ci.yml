@@ -33,7 +33,12 @@ jobs:
             clang \
             libclang-dev \
             build-essential \
-            pkg-config
+            pkg-config \
+            libtesseract-dev \
+            libleptonica-dev \
+            tesseract-ocr \
+            tesseract-ocr-eng \
+            tesseract-ocr-por
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -102,7 +107,11 @@ jobs:
             gtk-layer-shell \
             cmake \
             clang \
-            pkgconf
+            pkgconf \
+            tesseract \
+            tesseract-data-eng \
+            tesseract-data-por \
+            leptonica
 
       - uses: Swatinem/rust-cache@v2
 

@@ -86,10 +86,15 @@ copy_transcript = true
 voice_approve = "off"     # or "reversible"
 
 [screen]
-context = "off"           # or "text" | "image" (capture lands in M3)
+context = "off"           # or "text" (OCR) | "image"
+scope = "window"          # or "screen"
+preview = "first"         # or "always" | "never"
+exclude_apps = []         # extra app_id substrings
 ```
 
 Requires `claude` on `PATH` for agent mode. Set `[agent] enabled = false` for transcription-only.
+
+Screen context is **off by default**. Enable `context = "text"` for local OCR (Tesseract `por`+`eng`). Captures are in-memory only. Print Niri block-out rules with `lira setup niri`.
 
 Models download on first use (SHA-256 verified) under the XDG data directory.
 
