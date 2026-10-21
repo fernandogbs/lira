@@ -1,3 +1,4 @@
+mod main_thread;
 mod popup;
 mod voice;
 
@@ -220,6 +221,16 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            // The popup is destroyed on hide; closing the last window must not
+            // quit the daemon. Explicit exits (tray "Quit") carry a code.
+            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
+                if code.is_none() {
+                    log::debug!("last window closed; keeping lira-app running");
+                    api.prevent_exit();
+                }
+            }
+        });
 }
