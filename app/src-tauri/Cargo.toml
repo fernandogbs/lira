@@ -13,6 +13,7 @@ arboard = "3"
 lira-audio = { path = "../../crates/audio" }
 lira-compositor = { path = "../../crates/compositor" }
 lira-core = { path = "../../crates/core" }
+lira-hotkey = { path = "../../crates/hotkey" }
 lira-stt = { path = "../../crates/stt" }
 log = "0.4"
 env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }

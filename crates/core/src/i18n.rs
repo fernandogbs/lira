@@ -109,6 +109,8 @@ pub struct Catalog {
     pub screen_context_image: &'static str,
     pub screen_context_text_hint: &'static str,
     pub screen_context_image_warning: &'static str,
+    pub evdev_warning: &'static str,
+    pub evdev_not_acknowledged: &'static str,
 }
 
 const CATALOG_PT_BR: Catalog = Catalog {
@@ -125,6 +127,8 @@ const CATALOG_PT_BR: Catalog = Catalog {
     screen_context_image: "imagem",
     screen_context_text_hint: "Modo texto: OCR local quando implementado (recomendado).",
     screen_context_image_warning: "Modo imagem: envia capturas ao modelo — maior custo em tokens.",
+    evdev_warning: "Para segurar a tecla no Niri, o Lira precisa ler o teclado direto (/dev/input). Isso exige seu usuário no grupo input, o que dá a qualquer programa seu a capacidade de ler tudo que você digita, inclusive senhas. O lira-hold só escuta a tecla configurada e não grava nada, mas a permissão vale para o sistema inteiro. Recomendado: usar o modo toggle.",
+    evdev_not_acknowledged: "hold_backend=evdev ignorado: defina hotkey.evdev_acknowledged = true após ler o aviso de segurança.",
 };
 
 const CATALOG_EN: Catalog = Catalog {
@@ -141,6 +145,8 @@ const CATALOG_EN: Catalog = Catalog {
     screen_context_image: "image",
     screen_context_text_hint: "Text mode: local OCR when implemented (recommended).",
     screen_context_image_warning: "Image mode: sends screenshots to the model — higher token cost.",
+    evdev_warning: "To hold-to-talk on Niri, Lira must read the keyboard directly (/dev/input). That requires your user in the input group, which lets any of your programs read everything you type, including passwords. lira-hold only listens for the configured key and does not log keystrokes, but the permission is system-wide. Recommended: use toggle mode.",
+    evdev_not_acknowledged: "hold_backend=evdev ignored: set hotkey.evdev_acknowledged = true after reading the security warning.",
 };
 
 #[cfg(test)]
@@ -168,6 +174,8 @@ mod tests {
                 "screen_context_image_warning",
                 c.screen_context_image_warning,
             ),
+            ("evdev_warning", c.evdev_warning),
+            ("evdev_not_acknowledged", c.evdev_not_acknowledged),
         ])
     }
 

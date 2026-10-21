@@ -38,7 +38,15 @@ Mod+Space repeat=false { spawn "lira" "toggle"; }
 
 See `packaging/niri/lira.kdl` for the recommended window rule (`app-id` `lira-app`, floating top-right, block screen capture).
 
-**Hold mode:** set `[hotkey] mode = "hold"` and bind compositor press/release to `lira start` / `lira stop` where the compositor supports release binds (e.g. Hyprland `bind` + `bindr`). On Niri, prefer toggle + VAD. Portal GlobalShortcuts and opt-in `lira-hold` (evdev) land in the M1 exit follow-up; do not enable evdev without reading the security warning in the docs.
+**Hold mode:** set `[hotkey] mode = "hold"` and choose `hold_backend`:
+
+| Backend | When | How |
+|---------|------|-----|
+| `compositor` (default on Niri) | Hyprland `bind`/`bindr`, or any press/release binds | See `packaging/hyprland/lira.conf` |
+| `portal` | KDE / GNOME / Hyprland portal | App requests GlobalShortcuts; activate→start, deactivate→stop |
+| `evdev` | Niri opt-in only | Run `lira-hold` after setting `evdev_acknowledged = true`. Requires `input` group. **Never auto-enabled.** |
+
+On Niri, prefer toggle + VAD. Read the security warning printed by `lira-hold` before enabling evdev.
 
 Optional tray: on Linux the app creates a tray icon only when `org.kde.StatusNotifierWatcher` is on the session bus (e.g. DankMaterialShell / dux-shell). Set `LIRA_NO_TRAY=1` to disable. Tray failures are logged and never exit the app.
 
@@ -48,8 +56,11 @@ Optional tray: on Linux the app creates a tray icon only when `org.kde.StatusNot
 
 ```toml
 [hotkey]
-mode = "toggle"           # or "hold" (use start/stop binds; VAD off while holding)
+mode = "toggle"           # or "hold" (VAD off while holding)
 vad_autostop_ms = 1500    # toggle only; 0 disables
+hold_backend = "compositor"  # or "portal" | "evdev"
+# hold_key = "KEY_SPACE"   # for lira-hold
+# evdev_acknowledged = false
 
 [ui]
 locale = "system"         # or "pt-BR" | "en"

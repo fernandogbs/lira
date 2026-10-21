@@ -9,9 +9,15 @@ edition.workspace = true
 name = "lira"
 path = "src/main.rs"
 
+[[bin]]
+name = "lira-hold"
+path = "src/bin/lira_hold.rs"
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
+evdev = "0.13"
 lira-core = { path = "../crates/core" }
+nix = { version = "0.29", default-features = false, features = ["fs"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
 [dev-dependencies]
