@@ -47,7 +47,12 @@ impl Response {
     }
 }
 
+/// Socket path: `$LIRA_SOCKET` if set (tests, a second instance), else
+/// `$XDG_RUNTIME_DIR/lira.sock`, else the temp dir.
 pub fn socket_path() -> PathBuf {
+    if let Some(custom) = std::env::var_os("LIRA_SOCKET").filter(|v| !v.is_empty()) {
+        return PathBuf::from(custom);
+    }
     if let Ok(runtime) = std::env::var("XDG_RUNTIME_DIR") {
         return PathBuf::from(runtime).join("lira.sock");
     }

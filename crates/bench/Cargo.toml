@@ -1,0 +1,26 @@
+[package]
+name = "lira-bench"
+version = "0.1.0"
+description = "STT benchmark harness for Lira"
+license.workspace = true
+edition.workspace = true
+publish = false
+
+[[bin]]
+name = "lira-bench"
+path = "src/main.rs"
+
+[features]
+default = []
+cuda = ["lira-stt/cuda"]
+openmp = ["lira-stt/openmp"]
+vulkan = ["lira-stt/vulkan"]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+hound = "3.5"
+lira-audio = { path = "../audio" }
+lira-core = { path = "../core" }
+lira-stt = { path = "../stt" }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true

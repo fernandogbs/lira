@@ -9,14 +9,21 @@ edition.workspace = true
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+arboard = "3"
+lira-audio = { path = "../../crates/audio" }
 lira-compositor = { path = "../../crates/compositor" }
 lira-core = { path = "../../crates/core" }
+lira-stt = { path = "../../crates/stt" }
 log = "0.4"
 env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tauri = { version = "2", features = ["tray-icon"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { version = "0.18", package = "gtk" }
+gtk-layer-shell = { version = "0.8", features = ["v0_6"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

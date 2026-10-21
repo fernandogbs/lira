@@ -1,3 +1,7 @@
+mod main_thread;
+mod popup;
+mod voice;
+
 use std::sync::{Arc, Mutex};
 
 use lira_core::ipc::{Command, CommandHandler, IpcServer, Response};
@@ -6,11 +10,12 @@ use lira_core::{AppState, Locale};
 use serde::Serialize;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, State};
+use voice::VoiceHandle;
 
-struct AppRuntime {
+pub struct AppRuntime {
     state: Mutex<AppState>,
-    settings: Settings,
+    settings: Mutex<Settings>,
     locale: Locale,
 }
 
@@ -28,17 +33,23 @@ struct PopupPayload {
 
 fn popup_payload(runtime: &AppRuntime) -> PopupPayload {
     let state = *runtime.state.lock().expect("state lock");
+    let settings = runtime.settings.lock().expect("settings lock");
     let locale = runtime.locale;
     PopupPayload {
         state,
-        hotkey_mode: runtime.settings.hotkey_mode(),
-        screen_context: runtime.settings.screen.context,
+        hotkey_mode: settings.hotkey_mode(),
+        screen_context: settings.screen.context,
         locale_tag: locale.tag().to_string(),
         state_label: locale.status_line(state),
-        hotkey_mode_label: locale.hotkey_mode_label(runtime.settings.hotkey_mode()),
-        screen_context_label: locale.screen_context_label(runtime.settings.screen.context),
-        screen_context_note: locale.screen_context_note(runtime.settings.screen.context),
+        hotkey_mode_label: locale.hotkey_mode_label(settings.hotkey_mode()),
+        screen_context_label: locale.screen_context_label(settings.screen.context),
+        screen_context_note: locale.screen_context_note(settings.screen.context),
     }
+}
+
+pub fn emit_popup_status(app: &AppHandle, runtime: &Arc<AppRuntime>) {
+    let payload = popup_payload(runtime);
+    let _ = app.emit("lira://status", payload);
 }
 
 #[tauri::command]
@@ -46,59 +57,19 @@ fn get_popup_status(runtime: State<'_, Arc<AppRuntime>>) -> PopupPayload {
     popup_payload(&runtime)
 }
 
-fn emit_popup_status(app: &AppHandle, runtime: &AppRuntime) {
-    let payload = popup_payload(runtime);
-    let _ = app.emit("lira://status", payload);
-}
-
-fn show_popup(app: &AppHandle) {
-    if app.get_webview_window("popup").is_some() {
-        return;
-    }
-    let url = WebviewUrl::App("index.html".into());
-    if let Err(err) = WebviewWindowBuilder::new(app, "popup", url)
-        .title("Lira")
-        .inner_size(320.0, 200.0)
-        .resizable(false)
-        .decorations(true)
-        .visible(true)
-        .build()
-    {
-        log::error!("failed to open popup: {err}");
-    }
-}
-
-fn hide_popup(app: &AppHandle) {
-    if let Some(window) = app.get_webview_window("popup") {
-        let _ = window.close();
-    }
-}
-
-fn apply_command(app: &AppHandle, runtime: &Arc<AppRuntime>, command: Command) -> Response {
-    let mut state = runtime.state.lock().expect("state lock");
+fn apply_command(
+    app: &AppHandle,
+    runtime: &Arc<AppRuntime>,
+    voice: &VoiceHandle,
+    command: Command,
+) -> Response {
     match command {
-        Command::Toggle => {
-            if app.get_webview_window("popup").is_some() {
-                hide_popup(app);
-                *state = AppState::Idle;
-            } else {
-                *state = state.toggle();
-                show_popup(app);
-            }
-        }
-        Command::Start => {
-            *state = AppState::Listening;
-            show_popup(app);
-        }
-        Command::Stop => {
-            *state = AppState::Idle;
-            hide_popup(app);
-        }
+        Command::Toggle => voice::handle_toggle(app, runtime, voice),
+        Command::Start => voice::handle_start(app, runtime, voice),
+        Command::Stop => voice::handle_stop(app, runtime, voice),
         Command::Status => {}
     }
-    let current = *state;
-    // Release the lock before emitting: popup_payload locks state again.
-    drop(state);
+    let current = *runtime.state.lock().expect("state lock");
     emit_popup_status(app, runtime);
     Response::ok(current)
 }
@@ -168,7 +139,9 @@ fn setup_tray(app: &AppHandle, locale: Locale) -> Result<(), Box<dyn std::error:
         .on_menu_event(|app, event| match event.id.as_ref() {
             "toggle" => {
                 if let Some(runtime) = app.try_state::<Arc<AppRuntime>>() {
-                    apply_command(app, &runtime, Command::Toggle);
+                    if let Some(voice) = app.try_state::<VoiceHandle>() {
+                        apply_command(app, &runtime, &voice, Command::Toggle);
+                    }
                 }
             }
             "quit" => {
@@ -185,7 +158,9 @@ fn setup_tray(app: &AppHandle, locale: Locale) -> Result<(), Box<dyn std::error:
             {
                 let app = tray.app_handle();
                 if let Some(runtime) = app.try_state::<Arc<AppRuntime>>() {
-                    apply_command(app, &runtime, Command::Toggle);
+                    if let Some(voice) = app.try_state::<VoiceHandle>() {
+                        apply_command(app, &runtime, &voice, Command::Toggle);
+                    }
                 }
             }
         })
@@ -198,14 +173,16 @@ pub fn run() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let settings = Settings::load().unwrap_or_default();
     if settings.hotkey_mode() == HotkeyMode::Hold {
-        log::warn!("hotkey mode=hold is accepted but not implemented in M0 (stub)");
+        log::warn!(
+            "hotkey mode=hold: use compositor start/stop binds (portal and lira-hold come later)"
+        );
     }
 
     let locale = settings.ui.locale.resolve();
 
     let runtime = Arc::new(AppRuntime {
         state: Mutex::new(AppState::Idle),
-        settings,
+        settings: Mutex::new(settings),
         locale,
     });
 
@@ -216,6 +193,9 @@ pub fn run() {
         .manage(Arc::clone(&runtime))
         .invoke_handler(tauri::generate_handler![get_popup_status])
         .setup(move |app| {
+            let voice = VoiceHandle::spawn(app.handle().clone(), Arc::clone(&runtime));
+            app.manage(voice);
+
             let tray_locale = runtime.locale;
             if let Err(err) = setup_tray(app.handle(), tray_locale) {
                 log::warn!("tray setup failed (ignored): {err}");
@@ -223,7 +203,10 @@ pub fn run() {
 
             let handle = app.handle().clone();
             let rt = Arc::clone(&runtime);
-            let handler: CommandHandler = Arc::new(move |cmd| apply_command(&handle, &rt, cmd));
+            let handler: CommandHandler = Arc::new(move |cmd| {
+                let voice = handle.state::<VoiceHandle>();
+                apply_command(&handle, &rt, &voice, cmd)
+            });
 
             let socket_path = lira_core::ipc::socket_path();
             tauri::async_runtime::spawn(async move {
@@ -240,6 +223,16 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            // The popup is destroyed on hide; closing the last window must not
+            // quit the daemon. Explicit exits (tray "Quit") carry a code.
+            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
+                if code.is_none() {
+                    log::debug!("last window closed; keeping lira-app running");
+                    api.prevent_exit();
+                }
+            }
+        });
 }

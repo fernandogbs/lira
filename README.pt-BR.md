@@ -2,7 +2,7 @@
 
 Aplicativo de bandeja/pop-up open source (MIT OR Apache-2.0) para falar por voz com agentes de código (Claude Code primeiro). Alvo principal: Linux no Niri (Wayland).
 
-O **M0** é um scaffold: shell Tauri, CLI por socket Unix, pop-up Svelte mínimo e limites de crates para áudio, STT, adaptadores, detecção de compositor e plugins. Captura de voz e integração com Claude Code vêm em marcos posteriores.
+O **M1** entrega push-to-talk e transcrição local no Niri: toggle ou hold via binds da CLI, captura com cpal, VAD Silero, whisper.cpp (`small-q5_1` padrão), pop-up layer-shell com o texto, cópia para a área de transferência e histórico SQLite opcional. Integração com Claude Code é o **M2**; captura de tela é o **M3**.
 
 Versão em inglês: [README.md](README.md).
 
@@ -17,24 +17,28 @@ SKIP_DCO=1 ./scripts/check.sh
 cargo build -p lira-cli
 ```
 
+Checklist manual do M1 (Niri): `./scripts/manual-test-m1.sh`
+
 ## CLI (atalho / spawn)
 
 Com o app em execução, controle pelo socket Unix em `$XDG_RUNTIME_DIR/lira.sock`:
 
 ```bash
-lira toggle   # mostra/oculta o pop-up e alterna o estado (M0)
-lira start
-lira stop
+lira toggle   # alterna gravação (apertar de novo para parar / VAD)
+lira start    # inicia gravação (hold / bind de pressionar)
+lira stop     # para e transcreve (hold / bind de soltar)
 lira status
 ```
 
-No Niri, vincule o toggle sem repeat (sem key-release global):
+No Niri (sem portal GlobalShortcuts e sem bind de release), use **toggle** por padrão:
 
 ```kdl
 Mod+Space repeat=false { spawn "lira" "toggle"; }
 ```
 
 Veja `packaging/niri/lira.kdl` para a regra de janela recomendada (`app-id` `lira-app`, flutuante no canto superior direito, `block-out-from "screen-capture"`).
+
+**Modo hold:** defina `[hotkey] mode = "hold"` e vincule pressionar/soltar a `lira start` / `lira stop` onde o compositor suporte (ex.: Hyprland `bind` + `bindr`). No Niri, prefira toggle + VAD. Portal GlobalShortcuts e `lira-hold` (evdev, opt-in) entram no fechamento do M1; não ative evdev sem ler o aviso de segurança na documentação.
 
 Bandeja opcional: no Linux o ícone só é criado quando `org.kde.StatusNotifierWatcher` está no barramento de sessão (ex.: DankMaterialShell / dux-shell). Use `LIRA_NO_TRAY=1` para desativar. Falhas na bandeja são registradas em log e nunca encerram o app.
 
@@ -44,14 +48,28 @@ Bandeja opcional: no Linux o ícone só é criado quando `org.kde.StatusNotifier
 
 ```toml
 [hotkey]
-mode = "toggle"   # ou "hold" (aceito; hold é stub no M0)
+mode = "toggle"           # ou "hold" (use binds start/stop; VAD desligado no hold)
+vad_autostop_ms = 1500    # só no toggle; 0 desliga
 
 [ui]
-locale = "system" # ou "pt-BR" | "en" (system = detecção por LC_* / LANG)
+locale = "system"         # ou "pt-BR" | "en"
+popup = "auto"            # ou "layer_shell" | "floating"
+
+[stt]
+engine = "whisper"
+model = "small-q5_1"      # padrão pós-benchmark M1; "large-v3-turbo-q5_0" para qualidade
+language = "auto"         # ou "pt" | "en" (auto segue o idioma da interface)
+vocabulary = []           # termos extras no prompt inicial do Whisper
+keep_warm_min = 5
+
+[history]
+enabled = true
 
 [screen]
-context = "off"   # ou "text" | "image" (M0: só config e textos na UI, sem captura)
+context = "off"           # ou "text" | "image" (captura no M3)
 ```
+
+Os modelos são baixados no primeiro uso (SHA-256) no diretório de dados XDG.
 
 ## Licença
 

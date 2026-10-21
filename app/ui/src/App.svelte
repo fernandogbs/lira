@@ -6,7 +6,7 @@
   import ptBr from "./locales/pt-BR.json";
 
   type HotkeyMode = "toggle" | "hold";
-  type AppState = "idle" | "listening";
+  type AppState = "idle" | "listening" | "transcribing";
   type ScreenContext = "off" | "text" | "image";
 
   interface PopupStatus {
@@ -18,6 +18,16 @@
     hotkey_mode_label: string;
     screen_context_label: string;
     screen_context_note: string | null;
+  }
+
+  interface TranscriptPayload {
+    text: string;
+    latency_ms: number;
+    model: string;
+  }
+
+  interface ErrorPayload {
+    message: string;
   }
 
   type LocaleStrings = typeof en;
@@ -33,6 +43,10 @@
     screen_context_note: null,
   };
 
+  let transcript: TranscriptPayload | null = null;
+  let errorMessage: string | null = null;
+  let copiedNotice = false;
+
   function localeStrings(tag: string): LocaleStrings {
     return tag === "pt-BR" ? ptBr : en;
   }
@@ -45,11 +59,27 @@
 
   onMount(() => {
     refresh();
-    const unlisten = listen<PopupStatus>("lira://status", (event) => {
+    const unsubs: Array<() => void> = [];
+    listen<PopupStatus>("lira://status", (event) => {
       status = event.payload;
-    });
-    return async () => {
-      (await unlisten)();
+      if (status.state !== "idle") {
+        transcript = null;
+        errorMessage = null;
+        copiedNotice = false;
+      }
+    }).then((u) => unsubs.push(u));
+    listen<TranscriptPayload>("lira://transcript", (event) => {
+      transcript = event.payload;
+      errorMessage = null;
+      copiedNotice = true;
+    }).then((u) => unsubs.push(u));
+    listen<ErrorPayload>("lira://error", (event) => {
+      errorMessage = event.payload.message;
+      transcript = null;
+      copiedNotice = false;
+    }).then((u) => unsubs.push(u));
+    return () => {
+      for (const u of unsubs) u();
     };
   });
 </script>
@@ -66,4 +96,28 @@
   {#if status.screen_context_note}
     <p class="note">{status.screen_context_note}</p>
   {/if}
+  {#if transcript}
+    <section class="result">
+      <p class="transcript" data-selectable>{transcript.text}</p>
+      {#if copiedNotice}
+        <p class="muted">{locale.copiedToClipboard}</p>
+      {/if}
+      <p class="muted">
+        {locale.latencyLabel.replace("{ms}", String(transcript.latency_ms))}
+      </p>
+    </section>
+  {/if}
+  {#if errorMessage}
+    <p class="error">{errorMessage}</p>
+  {/if}
 </main>
+
+<style>
+  .transcript {
+    user-select: text;
+    white-space: pre-wrap;
+  }
+  .error {
+    color: #c62828;
+  }
+</style>

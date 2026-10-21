@@ -199,7 +199,7 @@ Tudo fica em `~/.config/lira/config.toml` (editável à mão) e numa tela de con
 | **Idioma** | `ui.locale` | `pt-BR` \| `en` \| `system` | `system` |
 | | `stt.language` | `pt` \| `en` \| `auto` | igual à interface (`pt` se a interface estiver em pt-BR) |
 | | `stt.vocabulary` | lista de termos | nome do repositório, branch e termos técnicos comuns |
-| **Modelo** | `stt.engine` / `stt.model` | ver 5.3 | `whisper` / `large-v3-turbo-q5_0` |
+| **Modelo** | `stt.engine` / `stt.model` | ver 5.3 | `whisper` / `small-q5_1` (decidido no benchmark do M1) |
 | | `stt.keep_warm_min` | 0–60 | 5 (descarrega o modelo da RAM depois) |
 | **Tela** | `screen.enabled` | bool | `false` |
 | | `screen.scope` | `window` \| `screen` | `window` |
@@ -232,6 +232,7 @@ Fatos que pesam:
 - O Whisper aceita idioma fixo e um *initial prompt* com vocabulário: nome do repositório, "PR", "deploy", "endpoint". Isso ajuda muito no pt-BR misturado com termos técnicos em inglês, que é o jeito que dev brasileiro fala.
 
 **Recomendação:**
+- **Atualização pós-benchmark do M1 (21/10/2026):** o padrão passou a ser **whisper `small-q5_1`**. No CPU da máquina de dev, o turbo levou ~56 s por frase, muito acima da regra de ~3 s. O small fez 5,92% de WER em pt e 7,86% em en (FLEURS, 30 + 30 frases). O turbo fica como opção de qualidade; a medição em GPU (config C), o perfil de energia `performance` e a revisão da meta de latência estão na issue #3. A recomendação original segue abaixo para referência.
 - **Padrão: whisper `large-v3-turbo-q5_0`**, com `stt.language` fixo (`pt` ou `en`) e o vocabulário no prompt. É o melhor para pt-BR, e o tamanho cabe no disco (547 MiB). A RAM só é usada enquanto o modelo está carregado (descarrega depois de `keep_warm_min`).
 - **"Rápido / pouca RAM": whisper `small` q5** (~10,9% PT), para máquinas fracas.
 - **Opcional: Parakeet v3** via sherpa-onnx, para quem fala mais inglês ou quer a menor latência no CPU. Aviso na tela: "menos preciso em pt-BR".
