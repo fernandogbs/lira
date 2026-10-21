@@ -2,7 +2,7 @@
 
 Open-source (MIT OR Apache-2.0) tray/popup app to talk by voice to coding agents (Claude Code first). Primary target: Linux on Niri (Wayland).
 
-**M1** delivers local push-to-talk and transcription on Niri. **M2** routes transcripts to Claude Code (`claude -p` / `--resume`) with a rule-based intent router, session store, desktop notifications, and `lira sessions`. Screen context capture is **M3**.
+**Linux MVP (M1–M3)** is on `main` (tag `v0.2.0`): local push-to-talk + Whisper STT, Claude Code adapter with rule-based intents, and opt-in screen OCR. Windows (M4) and TTS are next — see [docs/mvp-linux.md](docs/mvp-linux.md).
 
 See also [README.pt-BR.md](README.pt-BR.md).
 

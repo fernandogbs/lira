@@ -2,7 +2,7 @@
 
 Aplicativo de bandeja/pop-up open source (MIT OR Apache-2.0) para falar por voz com agentes de código (Claude Code primeiro). Alvo principal: Linux no Niri (Wayland).
 
-O **M1** entrega push-to-talk e transcrição local no Niri: toggle ou hold via binds da CLI, captura com cpal, VAD Silero, whisper.cpp (`small-q5_1` padrão), pop-up layer-shell com o texto, cópia para a área de transferência e histórico SQLite opcional. Integração com Claude Code é o **M2**; captura de tela é o **M3**.
+O **MVP Linux (M1–M3)** está em `main` (tag `v0.2.0`): push-to-talk + Whisper local, adaptador Claude Code com roteador de intenções e OCR de tela opt-in. Windows (M4) e TTS vêm depois — ver [docs/mvp-linux.md](docs/mvp-linux.md).
 
 Versão em inglês: [README.md](README.md).
 
