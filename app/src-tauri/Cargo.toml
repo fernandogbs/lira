@@ -18,6 +18,7 @@ lira-audio = { path = "../../crates/audio" }
 lira-compositor = { path = "../../crates/compositor" }
 lira-core = { path = "../../crates/core" }
 lira-hotkey = { path = "../../crates/hotkey" }
+lira-screen = { path = "../../crates/screen" }
 lira-store = { path = "../../crates/store" }
 lira-stt = { path = "../../crates/stt" }
 log = "0.4"

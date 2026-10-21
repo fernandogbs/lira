@@ -7,8 +7,9 @@ use lira_adapter_api::{AdapterEvent, AgentAdapter};
 use lira_adapter_claude_code::ClaudeCodeAdapter;
 use lira_core::policy::{classify_action, decide_voice_approval, PolicyDecision};
 use lira_core::router::{route, Intent};
-use lira_core::settings::Settings;
+use lira_core::settings::{ScreenContext, ScreenPreview, ScreenScope, Settings};
 use lira_core::AppState;
+use lira_screen::{capture_context, ScreenMode, ScreenPayload};
 use lira_store::{SessionRow, Store};
 use notify_rust::Notification;
 use serde::Serialize;
@@ -161,14 +162,80 @@ async fn dispatch(
             let session = resolve_session(&adapter, settings, session.as_deref()).await?;
             set_waiting(app, runtime);
             let lang = settings.effective_language();
-            let prompt = if lang == "pt" {
+            let mut prompt = if lang == "pt" {
                 format!("Responda em português brasileiro.\n\n{message}")
             } else {
                 format!("Reply in English.\n\n{message}")
             };
+            if let Some(ctx) = attach_screen_context(app, runtime, settings)? {
+                prompt.push_str("\n\n--- screen context ---\n");
+                prompt.push_str(&ctx);
+            }
             adapter.send(&session, &prompt).await?;
             touch_store(&session, &truncate(&message, 48));
             Ok(())
+        }
+    }
+}
+
+fn attach_screen_context(
+    app: &AppHandle,
+    runtime: &Arc<AppRuntime>,
+    settings: &Settings,
+) -> Result<Option<String>, String> {
+    let mode = match settings.screen.context {
+        ScreenContext::Off => return Ok(None),
+        ScreenContext::Text => ScreenMode::Text,
+        ScreenContext::Image => ScreenMode::Image,
+    };
+    let scope_window = matches!(settings.screen.scope, ScreenScope::Window);
+    match capture_context(mode, scope_window, &settings.screen.exclude_apps) {
+        Ok(ScreenPayload::Text(text)) => {
+            maybe_preview(app, runtime, settings, &text);
+            Ok(Some(text))
+        }
+        Ok(ScreenPayload::ImagePng(bytes)) => {
+            let note = format!(
+                "[image attached: {} bytes PNG — vision mode; prefer OCR/text for privacy]",
+                bytes.len()
+            );
+            maybe_preview(app, runtime, settings, &note);
+            // Image bytes are not persisted; describe size only for the text prompt path.
+            // Full vision upload can be added when the adapter accepts multimodal input.
+            Ok(Some(note))
+        }
+        Err(lira_screen::ScreenError::Excluded(app_id)) => {
+            let msg = format!("tela não enviada (app protegido: {app_id})");
+            let _ = app.emit(
+                "lira://error",
+                crate::voice::ErrorPayload {
+                    message: msg.clone(),
+                },
+            );
+            Ok(None)
+        }
+        Err(err) => {
+            log::warn!("screen capture skipped: {err}");
+            Ok(None)
+        }
+    }
+}
+
+fn maybe_preview(app: &AppHandle, runtime: &Arc<AppRuntime>, settings: &Settings, text: &str) {
+    let show = match settings.screen.preview {
+        ScreenPreview::Always => true,
+        ScreenPreview::Never => false,
+        ScreenPreview::First => !settings.screen.preview_seen,
+    };
+    if show {
+        let _ = app.emit(
+            "lira://screen-preview",
+            serde_json::json!({ "text": truncate(text, 2000) }),
+        );
+        if matches!(settings.screen.preview, ScreenPreview::First) {
+            let mut s = runtime.settings.lock().expect("settings");
+            s.screen.preview_seen = true;
+            let _ = s.save();
         }
     }
 }

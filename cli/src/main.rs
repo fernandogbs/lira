@@ -18,6 +18,17 @@ enum Commands {
     Status,
     /// List known agent sessions (local store + discovery tip)
     Sessions,
+    /// Print setup snippets (does not edit user config)
+    Setup {
+        #[command(subcommand)]
+        target: SetupTarget,
+    },
+}
+
+#[derive(Subcommand)]
+enum SetupTarget {
+    /// Print Niri window-rules for block-out-from screen-capture
+    Niri,
 }
 
 #[tokio::main]
@@ -25,28 +36,39 @@ async fn main() {
     let locale = Settings::load().unwrap_or_default().ui.locale.resolve();
     let cli = Cli::parse();
 
-    if matches!(cli.command, Commands::Sessions) {
-        match Store::open_default() {
-            Ok(store) => match store.list_sessions() {
-                Ok(list) if list.is_empty() => {
-                    println!("(no sessions in store yet — speak to an agent first)");
-                }
-                Ok(list) => {
-                    for s in list {
-                        println!("{}\t{}\t{}", s.id, s.title, s.adapter);
+    match cli.command {
+        Commands::Sessions => {
+            match Store::open_default() {
+                Ok(store) => match store.list_sessions() {
+                    Ok(list) if list.is_empty() => {
+                        println!("(no sessions in store yet — speak to an agent first)");
                     }
-                }
+                    Ok(list) => {
+                        for s in list {
+                            println!("{}\t{}\t{}", s.id, s.title, s.adapter);
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("store error: {err}");
+                        std::process::exit(1);
+                    }
+                },
                 Err(err) => {
                     eprintln!("store error: {err}");
                     std::process::exit(1);
                 }
-            },
-            Err(err) => {
-                eprintln!("store error: {err}");
-                std::process::exit(1);
             }
+            return;
         }
-        return;
+        Commands::Setup {
+            target: SetupTarget::Niri,
+        } => {
+            print!("{}", lira_screen::niri_block_out_snippet());
+            println!();
+            println!("// Also see packaging/niri/lira.kdl for Lira app window-rule + binds");
+            return;
+        }
+        _ => {}
     }
 
     let cmd = match cli.command {
@@ -54,7 +76,7 @@ async fn main() {
         Commands::Start => Command::Start,
         Commands::Stop => Command::Stop,
         Commands::Status => Command::Status,
-        Commands::Sessions => unreachable!(),
+        Commands::Sessions | Commands::Setup { .. } => unreachable!(),
     };
 
     let path = socket_path();
