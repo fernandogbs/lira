@@ -1,4 +1,9 @@
-//! Audio I/O for Lira. Real capture via cpal is planned after M0.
+//! Audio capture (cpal) and voice-activity helpers.
 
-/// Placeholder until cpal integration lands.
-pub const STUB: &str = "lira-audio-stub";
+mod recorder;
+mod resample;
+mod vad;
+
+pub use recorder::{RecordError, Recorder};
+pub use resample::resample_to_16k_mono;
+pub use vad::{energy_has_speech, SilenceDetector, ENERGY_SPEECH_THRESHOLD, SAMPLE_RATE};

@@ -1,6 +1,12 @@
 [package]
 name = "lira-audio"
 version = "0.1.0"
-description = "Lira audio capture/playback (stub for M0)"
+description = "Lira audio capture and VAD"
 license.workspace = true
 edition.workspace = true
+
+[dependencies]
+cpal.workspace = true
+lira-stt = { path = "../stt" }
+log.workspace = true
+thiserror.workspace = true
