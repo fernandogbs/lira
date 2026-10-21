@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::policy::VoiceApprove;
+
 const INITIAL_PROMPT_MAX_CHARS: usize = 200;
 const VAD_AUTOSTOP_MAX_MS: u32 = 5000;
 
@@ -188,6 +190,38 @@ impl Default for HistorySection {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentSection {
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+    /// `focused` | session id/name | empty
+    #[serde(default = "default_agent_session")]
+    pub default_session: String,
+    /// When true, STT text is also copied to the clipboard even if sent to an agent.
+    #[serde(default = "default_true")]
+    pub copy_transcript: bool,
+}
+
+fn default_agent_session() -> String {
+    "focused".to_string()
+}
+
+impl Default for AgentSection {
+    fn default() -> Self {
+        Self {
+            enabled: default_true(),
+            default_session: default_agent_session(),
+            copy_transcript: default_true(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PolicySection {
+    #[serde(default)]
+    pub voice_approve: VoiceApprove,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Settings {
     #[serde(default)]
@@ -200,6 +234,10 @@ pub struct Settings {
     pub stt: SttSection,
     #[serde(default)]
     pub history: HistorySection,
+    #[serde(default)]
+    pub agent: AgentSection,
+    #[serde(default)]
+    pub policy: PolicySection,
 }
 
 impl UiLocale {

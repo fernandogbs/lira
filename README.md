@@ -2,7 +2,7 @@
 
 Open-source (MIT OR Apache-2.0) tray/popup app to talk by voice to coding agents (Claude Code first). Primary target: Linux on Niri (Wayland).
 
-**M1** delivers local push-to-talk and transcription on Niri: hold or toggle via CLI binds, cpal capture, Silero VAD auto-stop, whisper.cpp (`small-q5_1` default), layer-shell popup with transcript, clipboard copy, and optional SQLite history. Claude Code integration is **M2**; screen context capture is **M3**.
+**M1** delivers local push-to-talk and transcription on Niri. **M2** routes transcripts to Claude Code (`claude -p` / `--resume`) with a rule-based intent router, session store, desktop notifications, and `lira sessions`. Screen context capture is **M3**.
 
 See also [README.pt-BR.md](README.pt-BR.md).
 
@@ -28,6 +28,7 @@ lira toggle   # toggle listening (press again to stop / VAD auto-stop)
 lira start    # start recording (hold / compositor press bind)
 lira stop     # stop recording and transcribe (hold / compositor release bind)
 lira status
+lira sessions
 ```
 
 On Niri (no GlobalShortcuts portal, no key-release binds), use **toggle** by default:
@@ -76,9 +77,19 @@ keep_warm_min = 5
 [history]
 enabled = true
 
+[agent]
+enabled = true
+default_session = "focused"  # or a session id/name
+copy_transcript = true
+
+[policy]
+voice_approve = "off"     # or "reversible"
+
 [screen]
 context = "off"           # or "text" | "image" (capture lands in M3)
 ```
+
+Requires `claude` on `PATH` for agent mode. Set `[agent] enabled = false` for transcription-only.
 
 Models download on first use (SHA-256 verified) under the XDG data directory.
 

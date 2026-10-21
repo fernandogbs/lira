@@ -1,0 +1,16 @@
+[package]
+name = "lira-store"
+version = "0.1.0"
+description = "SQLite store for transcripts and agent sessions"
+license.workspace = true
+edition.workspace = true
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+dirs = { workspace = true }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

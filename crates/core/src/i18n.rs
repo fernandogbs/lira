@@ -58,6 +58,7 @@ impl Locale {
             AppState::Idle => self.catalog().state_idle.to_string(),
             AppState::Listening => self.catalog().state_listening.to_string(),
             AppState::Transcribing => self.catalog().state_transcribing.to_string(),
+            AppState::WaitingAgent => self.catalog().state_waiting_agent.to_string(),
         }
     }
 
@@ -100,6 +101,7 @@ pub struct Catalog {
     pub state_idle: &'static str,
     pub state_listening: &'static str,
     pub state_transcribing: &'static str,
+    pub state_waiting_agent: &'static str,
     pub hotkey_toggle: &'static str,
     pub hotkey_hold: &'static str,
     pub tray_toggle: &'static str,
@@ -111,6 +113,10 @@ pub struct Catalog {
     pub screen_context_image_warning: &'static str,
     pub evdev_warning: &'static str,
     pub evdev_not_acknowledged: &'static str,
+    pub agent_not_ready: &'static str,
+    pub agent_denied_destructive: &'static str,
+    pub agent_needs_click: &'static str,
+    pub agent_done: &'static str,
 }
 
 const CATALOG_PT_BR: Catalog = Catalog {
@@ -118,6 +124,7 @@ const CATALOG_PT_BR: Catalog = Catalog {
     state_idle: "Ocioso",
     state_listening: "Ouvindo…",
     state_transcribing: "Transcrevendo…",
+    state_waiting_agent: "Aguardando agente…",
     hotkey_toggle: "alternar (toggle)",
     hotkey_hold: "segurar (hold)",
     tray_toggle: "Alternar",
@@ -129,6 +136,10 @@ const CATALOG_PT_BR: Catalog = Catalog {
     screen_context_image_warning: "Modo imagem: envia capturas ao modelo — maior custo em tokens.",
     evdev_warning: "Para segurar a tecla no Niri, o Lira precisa ler o teclado direto (/dev/input). Isso exige seu usuário no grupo input, o que dá a qualquer programa seu a capacidade de ler tudo que você digita, inclusive senhas. O lira-hold só escuta a tecla configurada e não grava nada, mas a permissão vale para o sistema inteiro. Recomendado: usar o modo toggle.",
     evdev_not_acknowledged: "hold_backend=evdev ignorado: defina hotkey.evdev_acknowledged = true após ler o aviso de segurança.",
+    agent_not_ready: "Claude Code não está disponível (claude não encontrado no PATH).",
+    agent_denied_destructive: "Ação destrutiva não pode ser aprovada por voz — use o pop-up.",
+    agent_needs_click: "Aprovação por voz desligada — confirme no pop-up.",
+    agent_done: "Agente terminou",
 };
 
 const CATALOG_EN: Catalog = Catalog {
@@ -136,6 +147,7 @@ const CATALOG_EN: Catalog = Catalog {
     state_idle: "Idle",
     state_listening: "Listening…",
     state_transcribing: "Transcribing…",
+    state_waiting_agent: "Waiting for agent…",
     hotkey_toggle: "toggle",
     hotkey_hold: "hold",
     tray_toggle: "Toggle",
@@ -147,6 +159,10 @@ const CATALOG_EN: Catalog = Catalog {
     screen_context_image_warning: "Image mode: sends screenshots to the model — higher token cost.",
     evdev_warning: "To hold-to-talk on Niri, Lira must read the keyboard directly (/dev/input). That requires your user in the input group, which lets any of your programs read everything you type, including passwords. lira-hold only listens for the configured key and does not log keystrokes, but the permission is system-wide. Recommended: use toggle mode.",
     evdev_not_acknowledged: "hold_backend=evdev ignored: set hotkey.evdev_acknowledged = true after reading the security warning.",
+    agent_not_ready: "Claude Code is unavailable (claude not found on PATH).",
+    agent_denied_destructive: "Destructive actions cannot be approved by voice — use the popup.",
+    agent_needs_click: "Voice approval is off — confirm in the popup.",
+    agent_done: "Agent finished",
 };
 
 #[cfg(test)]
@@ -162,6 +178,7 @@ mod tests {
             ("state_idle", c.state_idle),
             ("state_listening", c.state_listening),
             ("state_transcribing", c.state_transcribing),
+            ("state_waiting_agent", c.state_waiting_agent),
             ("hotkey_toggle", c.hotkey_toggle),
             ("hotkey_hold", c.hotkey_hold),
             ("tray_toggle", c.tray_toggle),
@@ -176,6 +193,10 @@ mod tests {
             ),
             ("evdev_warning", c.evdev_warning),
             ("evdev_not_acknowledged", c.evdev_not_acknowledged),
+            ("agent_not_ready", c.agent_not_ready),
+            ("agent_denied_destructive", c.agent_denied_destructive),
+            ("agent_needs_click", c.agent_needs_click),
+            ("agent_done", c.agent_done),
         ])
     }
 

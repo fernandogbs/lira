@@ -8,8 +8,9 @@ edition.workspace = true
 [dependencies]
 async-trait.workspace = true
 futures-core = "0.3"
+futures-util = "0.3"
 serde.workspace = true
-tokio = { workspace = true, features = ["sync"] }
+tokio = { workspace = true, features = ["sync", "time"] }
 tokio-stream = "0.1"
 
 [dev-dependencies]

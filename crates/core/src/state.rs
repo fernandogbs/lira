@@ -6,6 +6,7 @@ pub enum AppState {
     Idle,
     Listening,
     Transcribing,
+    WaitingAgent,
 }
 
 impl AppState {
@@ -14,6 +15,7 @@ impl AppState {
             Self::Idle => Self::Listening,
             Self::Listening => Self::Idle,
             Self::Transcribing => Self::Transcribing,
+            Self::WaitingAgent => Self::WaitingAgent,
         }
     }
 }

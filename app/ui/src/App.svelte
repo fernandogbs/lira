@@ -6,7 +6,7 @@
   import ptBr from "./locales/pt-BR.json";
 
   type HotkeyMode = "toggle" | "hold";
-  type AppState = "idle" | "listening" | "transcribing";
+  type AppState = "idle" | "listening" | "transcribing" | "waiting_agent";
   type ScreenContext = "off" | "text" | "image";
 
   interface PopupStatus {
@@ -44,6 +44,7 @@
   };
 
   let transcript: TranscriptPayload | null = null;
+  let agentReply: string | null = null;
   let errorMessage: string | null = null;
   let copiedNotice = false;
 
@@ -62,8 +63,9 @@
     const unsubs: Array<() => void> = [];
     listen<PopupStatus>("lira://status", (event) => {
       status = event.payload;
-      if (status.state !== "idle") {
+      if (status.state === "listening" || status.state === "transcribing") {
         transcript = null;
+        agentReply = null;
         errorMessage = null;
         copiedNotice = false;
       }
@@ -73,9 +75,14 @@
       errorMessage = null;
       copiedNotice = true;
     }).then((u) => unsubs.push(u));
+    listen<{ session: string; text: string }>("lira://agent-reply", (event) => {
+      agentReply = event.payload.text;
+      errorMessage = null;
+    }).then((u) => unsubs.push(u));
     listen<ErrorPayload>("lira://error", (event) => {
       errorMessage = event.payload.message;
       transcript = null;
+      agentReply = null;
       copiedNotice = false;
     }).then((u) => unsubs.push(u));
     return () => {
@@ -105,6 +112,12 @@
       <p class="muted">
         {locale.latencyLabel.replace("{ms}", String(transcript.latency_ms))}
       </p>
+    </section>
+  {/if}
+  {#if agentReply}
+    <section class="result">
+      <p class="muted">{locale.agentReply}</p>
+      <p class="transcript" data-selectable>{agentReply}</p>
     </section>
   {/if}
   {#if errorMessage}
