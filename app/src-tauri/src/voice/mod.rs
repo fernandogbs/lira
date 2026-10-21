@@ -70,8 +70,10 @@ impl VoiceHandle {
                         language,
                         audio_ms,
                     } => {
-                        clipboard::copy_to_clipboard(&text);
                         let settings = runtime_stt.settings.lock().expect("settings").clone();
+                        if settings.agent.copy_transcript || !settings.agent.enabled {
+                            clipboard::copy_to_clipboard(&text);
+                        }
                         if settings.history.enabled {
                             if let Ok(history) = History::open_default() {
                                 if let Err(err) =
@@ -84,12 +86,20 @@ impl VoiceHandle {
                             }
                         }
                         let payload = TranscriptPayload {
-                            text,
+                            text: text.clone(),
                             latency_ms,
                             model,
                         };
                         let _ = app_stt.emit("lira://transcript", payload);
-                        set_state(&app_stt, &runtime_stt, AppState::Idle);
+                        if settings.agent.enabled {
+                            if let Some(agent) = app_stt.try_state::<crate::agent::AgentHandle>() {
+                                agent.handle_transcript(&app_stt, &runtime_stt, &text);
+                            } else {
+                                set_state(&app_stt, &runtime_stt, AppState::Idle);
+                            }
+                        } else {
+                            set_state(&app_stt, &runtime_stt, AppState::Idle);
+                        }
                     }
                     SttEvent::Error(message) => {
                         finish_error(&app_stt, &runtime_stt, message);
@@ -148,7 +158,7 @@ pub fn handle_toggle(app: &AppHandle, runtime: &Arc<AppRuntime>, voice: &VoiceHa
     let popup_open = app.get_webview_window("popup").is_some();
     let state = *runtime.state.lock().expect("state");
     match state {
-        AppState::Transcribing => {}
+        AppState::Transcribing | AppState::WaitingAgent => {}
         AppState::Listening => voice.stop_recording(app, runtime),
         AppState::Idle if popup_open => hide_popup(app),
         AppState::Idle => voice.start_recording(app, runtime),

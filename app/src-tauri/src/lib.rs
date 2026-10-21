@@ -1,3 +1,4 @@
+mod agent;
 mod main_thread;
 mod popup;
 mod voice;
@@ -246,6 +247,8 @@ pub fn run() {
         .manage(Arc::clone(&runtime))
         .invoke_handler(tauri::generate_handler![get_popup_status])
         .setup(move |app| {
+            let agent = agent::AgentHandle::spawn(app.handle().clone(), Arc::clone(&runtime));
+            app.manage(agent);
             let voice = VoiceHandle::spawn(app.handle().clone(), Arc::clone(&runtime));
             app.manage(voice);
 

@@ -100,6 +100,7 @@ impl AgentAdapter for FakeAdapter {
 }
 
 pub async fn run_adapter_contract(adapter: Arc<dyn AgentAdapter>) -> Result<(), String> {
+    let mut events = adapter.events();
     let sessions = adapter.list_sessions().await?;
     if sessions.is_empty() {
         return Err("expected at least one session".into());
@@ -111,6 +112,8 @@ pub async fn run_adapter_contract(adapter: Arc<dyn AgentAdapter>) -> Result<(), 
         return Err("adapter not ready".into());
     }
     let _summary = adapter.summarize(id).await?;
+    use futures_util::StreamExt;
+    let _ = tokio::time::timeout(std::time::Duration::from_millis(200), events.next()).await;
     Ok(())
 }
 

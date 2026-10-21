@@ -6,4 +6,12 @@ license.workspace = true
 edition.workspace = true
 
 [dependencies]
+async-trait = { workspace = true }
+dirs = { workspace = true }
+futures-util = "0.3"
 lira-adapter-api = { path = "../api" }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "process", "time"] }
+tokio-stream = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

@@ -10,13 +10,19 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 arboard = "3"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+futures-util = "0.3"
+lira-adapter-api = { path = "../../crates/adapters/api" }
+lira-adapter-claude-code = { path = "../../crates/adapters/claude-code" }
 lira-audio = { path = "../../crates/audio" }
 lira-compositor = { path = "../../crates/compositor" }
 lira-core = { path = "../../crates/core" }
 lira-hotkey = { path = "../../crates/hotkey" }
+lira-store = { path = "../../crates/store" }
 lira-stt = { path = "../../crates/stt" }
 log = "0.4"
 env_logger = { version = "0.11", default-features = false, features = ["auto-color", "humantime"] }
+notify-rust = "4"
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tauri = { version = "2", features = ["tray-icon"] }

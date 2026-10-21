@@ -9,5 +9,6 @@
   "screenContextTextHint": "Text mode: local OCR when implemented (recommended).",
   "screenContextImageWarning": "Image mode: sends screenshots to the model — higher token cost.",
   "copiedToClipboard": "Copied to clipboard",
-  "latencyLabel": "Latency: {ms} ms"
+  "latencyLabel": "Latency: {ms} ms",
+  "agentReply": "Agent"
 }

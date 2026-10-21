@@ -17,6 +17,7 @@ path = "src/bin/lira_hold.rs"
 clap = { version = "4", features = ["derive"] }
 evdev = "0.13"
 lira-core = { path = "../crates/core" }
+lira-store = { path = "../crates/store" }
 nix = { version = "0.29", default-features = false, features = ["fs"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 
